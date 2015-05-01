@@ -1,0 +1,8 @@
+SQLAlchemy==1.0.2
+h5py==2.5.0
+numpy==1.9.2
+Pillow==2.8.1
+psycopg2==2.6
+python-dateutil==2.4.2
+six==1.9.0
+unittest2==1.0.1
