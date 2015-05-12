@@ -7,5 +7,5 @@ DB = {
     'password': 'web',
     'host': 'localhost',
     'port': '5432',
-    'db': 'sau',
+    'db': 'specdis',
 }

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# move required tables from access to postgres using mdb-export
+
+MDB="/Users/T-JosephS/svn/sau/archive/20141015/data/Taxon/TAXON_20130620/TaxonTable_22032012.mdb"
+SCHEMA="species_distribution"
+
+TABLE="TaxonNom"
+DB="sau"
+USER="web"
+
+mdb-schema $MDB -T $TABLE -N $SCHEMA postgres > /tmp/foo.sql # | psql -f - $DB $USER
+mdb-export -I postgres -N $SCHEMA $MDB TaxonNom > /tmp/foo2.sql #| psql -f - $DB $USER
+
