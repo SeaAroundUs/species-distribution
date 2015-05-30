@@ -26,7 +26,29 @@ from .db import SpecDisModel, engine, Base
 #     TargetGrpNum = Column(Integer())
 
 class TaxonPara(SpecDisModel):
-    __table__ = Table('qryalltaxon', Base.metadata, Column('taxonkey', Integer(), primary_key=True), autoload=True, autoload_with=engine)
+    __table__ = Table(
+        'qryalltaxon',
+        Base.metadata,
+        Column('taxonkey', Integer(), primary_key=True),
+        autoload=True,
+        autoload_with=engine
+    )
+
+    def __str__(self):
+        return str(self.taxonkey)
+
+    @property
+    def faos(self):
+        """returns a list of FAO regions this taxon is found in"""
+
+        ids = [18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67,
+            71, 77, 81, 87, 88]
+
+        return list(filter(lambda id: getattr(self, 'fao'+str(id)) == 1, ids))
+
+    @property
+    def pelagic(self):
+        return self.sppgroup or 3
 
 
 # TaxonPara = Table('qryalltaxon', Base.metadata, autoload=True, autoload_with=engine)

@@ -6,7 +6,7 @@ import operator
 import numpy as np
 from sqlalchemy import Column, Integer, Float
 
-from .db import session, SpecDisModel
+from .db import session, SpecDisModel, rows_to_grid
 
 
 class GridPoint(SpecDisModel):
@@ -62,6 +62,10 @@ class Grid():
     def shape(self):
         return self._lon.shape
 
+    @property
+    def field_names(self):
+        return (c.name for c in GridPoint.__table__.columns)
+
     def get_grid(self, field='SST'):
         """returns a spatial 2D numpy array of the field specified"""
         attr = getattr(GridPoint, field)
@@ -71,9 +75,5 @@ class Grid():
             .order_by('Row', 'Col') \
             .values(GridPoint.Row, GridPoint.Col, attr)
 
-        # convert ordered rows to a 2d grid
-        _grid = []
-        for _, row in itertools.groupby(grid_points, key=operator.itemgetter(0)):
-            _grid.append([x[2] for x in row])
+        return rows_to_grid(grid_points, dtype=attr.type.python_type)
 
-        return np.array(_grid, dtype=attr.type.python_type)

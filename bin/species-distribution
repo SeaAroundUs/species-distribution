@@ -1,5 +1,19 @@
 #!/usr/bin/env python
 
+import argparse
+
+import settings
 from species_distribution.main import main
 
-main()
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Species Distribution')
+    parser.add_argument('-f', '--force', action='store_true', help='overwrite any existing output file: {}'.format(settings.DISTRIBUTION_FILE))
+    parser.add_argument('-t', '--taxon', type=int, help='process this taxon only')
+    parser.add_argument('-l', '--limit', type=int, help='process this many taxa only')
+    return parser.parse_args()
+
+args = parse_args()
+
+
+main(args)
