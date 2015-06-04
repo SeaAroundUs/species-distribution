@@ -1,6 +1,6 @@
 """ Main module for running species_distribution """
 
-import concurrent.futures
+# import concurrent.futures
 from enum import Enum
 import logging
 
@@ -12,9 +12,11 @@ from species_distribution.models.world import Grid
 import species_distribution.filters as filters
 
 
-logging.basicConfig(
-    format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s',
-    level= logging.INFO)
+def configure_logging(level):
+    logging.basicConfig(
+        format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s',
+        level=level)
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,7 +30,6 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
     """returns a distribution matrix for given taxon taxon by applying filters"""
 
     logger.info("working on taxon {}".format(taxon.taxonkey))
-
     try:
         polygon_probability_matrix = filters.polygon.filter(taxon)
         fao_probability_matrix = filters.fao.filter(taxon)
@@ -51,7 +52,7 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
 
 
 def main(args):
-    logger.setLevel(args.verbose and logging.DEBUG)
+    configure_logging(args.verbose and logging.DEBUG or logging.INFO)
     logger.info("starting distribution")
 
     sesh = session()
@@ -68,9 +69,8 @@ def main(args):
 
     logger.info("Found {} taxa".format(len(taxa)))
 
-    futures = {}
-
-    executor = concurrent.futures.ProcessPoolExecutor(max_workers=args.threads)
+    # futures = {}
+    # executor = concurrent.futures.ProcessPoolExecutor(max_workers=args.threads)
 
     for taxon in taxa:
         if not taxon:
@@ -80,20 +80,22 @@ def main(args):
         if str(taxon.taxonkey) in distribution_file.keys():
             logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxon.taxonkey))
             continue
-        else:
-            future = executor.submit(create_taxon_distribution, taxon, {'season': Season.ANNUAL})
-            futures[future] = taxon
 
-    for future in concurrent.futures.as_completed(futures):
-        distribution = future.result()
+        distribution = create_taxon_distribution(taxon, {'season': Season.ANNUAL})
+        # future = executor.submit(create_taxon_distribution, taxon, {'season': Season.ANNUAL})
+        # futures[future] = taxon
+
+        # for future in concurrent.futures.as_completed(futures):
+        # distribution = future.result()
         if distribution is None:
             logger.debug('empty distribution returned')
             continue
-        taxon = futures[future]
+        # taxon = futures[future]
         io.save_image(array=distribution, name=taxon.taxonkey)
         _dataset = distribution_file.create_dataset(str(taxon.taxonkey), data=distribution)
+        logger.info('taxon {} complete'.format(taxon.taxonkey))
 
-    executor.shutdown()
+    # executor.shutdown()
 
     distribution_file.close()
     logger.info('distribution complete')
