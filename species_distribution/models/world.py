@@ -1,9 +1,7 @@
 """ Taxa data source """
 
-import itertools
-import operator
+import functools
 
-import numpy as np
 from sqlalchemy import Column, Integer, Float
 
 from .db import session, SpecDisModel, rows_to_grid
@@ -54,9 +52,23 @@ class GridPoint(SpecDisModel):
 
 
 class Grid():
+
+    _instance = None
+    _lon = None
+    _lat = None
+
+    def __new__(cls, *args, **kwargs):
+        """ singleton """
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self):
-        self._lon = self.get_grid(field='Lon')
-        self._lat = self.get_grid(field='Lat')
+        if self._lon is None:
+            self._lon = self.get_grid(field='Lon')
+
+        if self._lat is None:
+            self._lat = self.get_grid(field='Lat')
 
     @property
     def shape(self):
@@ -66,6 +78,7 @@ class Grid():
     def field_names(self):
         return (c.name for c in GridPoint.__table__.columns)
 
+    @functools.lru_cache(maxsize=2**32)
     def get_grid(self, field='SST'):
         """returns a spatial 2D numpy array of the field specified"""
         attr = getattr(GridPoint, field)

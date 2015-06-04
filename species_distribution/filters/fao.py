@@ -1,5 +1,7 @@
 import logging
 
+import numpy as np
+
 from species_distribution.filters.filter import Filter
 
 logger = logging.getLogger(__name__)
@@ -13,12 +15,13 @@ class FAOFilter(Filter):
         fao_grid = self.grid.get_grid('FAO')
         faos = taxon.faos
 
-        w, h = self.grid.shape
+        mask = np.zeros(fao_grid.shape, dtype=np.bool)
 
-        for j in range(h):
-            for i in range(w):
-                if fao_grid[i][j] in faos:
-                    self.probability_matrix[i][j] = 1
+        # flip on bits for cells with an ID in faos
+        for fao in faos:
+            mask |= fao_grid == fao
+
+        self.probability_matrix[mask] = 1.0
 
         return self.probability_matrix
 

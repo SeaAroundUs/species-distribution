@@ -9,4 +9,4 @@ class Filter():
         self.probability_matrix = self.get_probability_matrix(self.grid.shape)
 
     def get_probability_matrix(self, shape):
-        return np.ma.MaskedArray(data=np.zeros(shape), mask=True, dtype=float)
+        return np.ma.MaskedArray(data=np.full(shape, None, dtype=float), mask=True)

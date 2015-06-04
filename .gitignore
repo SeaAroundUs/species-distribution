@@ -1,3 +1,4 @@
 species_distribution.egg-info/
 *.pyc
 *.hdf5
+png/

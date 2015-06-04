@@ -1,6 +1,7 @@
 # settings for species-distribution
 
 DISTRIBUTION_FILE = 'species-distribution.hdf5'
+PNG_DIR = 'png'
 
 DB = {
     'username': 'web',

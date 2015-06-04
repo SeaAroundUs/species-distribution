@@ -1,73 +1,32 @@
-def write_cell_values(cell_values, taxon): pass
+import logging
+import os
+
+import h5py
+import numpy as np
+from PIL import Image
+
+import settings
+
+logger = logging.getLogger(__name__)
 
 
-# if SeasonFlg = False Then       'not pegalic species, so Annual distribution
-#     produceGridFile(pathA & "S" & taxKey & ".csv", cell_values)
-#     frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#     taxaDistribution.WriteAscii(pathA, cell_values, taxKey)
-# Else 'Pelagic spp
-#     if Season = 0 Then      'annual distribution
-#         produceGridFile(pathA & "S" & taxKey & ".csv", cell_values)
-#         frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#         taxaDistribution.WriteAscii(pathA, cell_values, taxKey)
-
-#     Else        'Seasonal distribution
-#         if Season = 1 Then      'Summer distribution
-#             if Equator = True Then          'Distribution across equator
-#                 if TwoPop = True Then
-#                     if NSHem = 1 Then   'Northern hemisphere
-#                         'Store the value in another array for later use
-#                         NHemCellVal = cell_values
-#                     Else        'Southern hemisphere
-#                         'Combine the abundance values in the N and S hemisphere
-#                         cell_values = CombineNSHem(cell_values, NHemCellVal)
-#                         ReDim NHemCellVal(0)
-#                         OutSeasonPath = pathSummer & "S" & taxKey & ".csv"
-#                         produceGridFile(OutSeasonPath, cell_values) 'no ERROR HANDLE!!!
-#                         frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#                         taxaDistribution.WriteAscii(pathSummer, cell_values, taxKey)
-#                     End if
-#                 Else        'Not Equatorial species
-#                     OutSeasonPath = pathSummer & "S" & taxKey & ".csv"
-#                     produceGridFile(OutSeasonPath, cell_values) 'no ERROR HANDLE!!!
-#                     frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#                     taxaDistribution.WriteAscii(pathSummer, cell_values, taxKey)
-#                 End if
-#             Else
-#                 OutSeasonPath = pathSummer & "S" & taxKey & ".csv"
-#                 produceGridFile(OutSeasonPath, cell_values) 'no ERROR HANDLE!!!
-#                 frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#                 taxaDistribution.WriteAscii(pathSummer, cell_values, taxKey)
-#             End if
-#         Else    'Winter Distribution
-#             if Equator = True Then          'Distribution across equator
-#                 if TwoPop = True Then
-#                     if NSHem = 1 Then   'Northern hemisphere
-#                         'Store the value in another array for later use
-#                         NHemCellVal = cell_values
-#                     Else        'Southern hemisphere
-#                         'Combine the abundance values in the N and S hemisphere
-#                         cell_values = CombineNSHem(cell_values, NHemCellVal)
-#                         ReDim NHemCellVal(0)
-#                         OutSeasonPath = pathWinter & "S" & taxKey & ".csv"
-#                         produceGridFile(OutSeasonPath, cell_values) 'no ERROR HANDLE!!!
-#                         frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#                         taxaDistribution.WriteAscii(pathWinter, cell_values, taxKey)
-#                     End if
-#                 Else        'Not Equatorial species
-#                     OutSeasonPath = pathWinter & "S" & taxKey & ".csv"
-#                     produceGridFile(OutSeasonPath, cell_values) 'no ERROR HANDLE!!!
-#                     frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#                     taxaDistribution.WriteAscii(pathWinter, cell_values, taxKey)
-#                 End if
-#             Else
-#                 OutSeasonPath = pathWinter & "S" & taxKey & ".csv"
-#                 produceGridFile(OutSeasonPath, cell_values) 'no ERROR HANDLE!!!
-#                 frmSpeDistBuild.prgProgressBar.PerformStep() '9
-#                 taxaDistribution.WriteAscii(pathWinter, cell_values, taxKey)
-#             End if
-#         End if
-#     End if
+def save_image(array, name):
+    """saves 2d array of values 0-1 to a grayscale PNG"""
+    array *= 255
+    array = array.astype(np.uint8)
+    image = Image.fromarray(array)
+    png = os.path.join(settings.PNG_DIR, str(name) + '.png')
+    logger.debug('writing {}'.format(png))
+    image.save(png)
 
 
-# End if
+def create_output_file(force=False):
+
+    if os.path.isfile(settings.DISTRIBUTION_FILE):
+        if force:
+            os.unlink(settings.DISTRIBUTION_FILE)
+        else:
+            logger.warn("Appending to existing file {}".format(settings.DISTRIBUTION_FILE))
+
+    return h5py.File(settings.DISTRIBUTION_FILE, 'a')
+
