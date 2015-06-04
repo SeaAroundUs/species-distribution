@@ -26,22 +26,34 @@ class Season(Enum):
     WINTER = 2
 
 
+def combine_probability_matrices(matrices):
+    """given a sequence of probability matrices, combine them into a
+    single matrix and return it"""
+
+    # shift off the first matrix to start
+    matrix = next(matrices)
+
+    for m in matrices:
+        # matrix *= m
+        matrix[~m.mask] *= m[~m.mask]
+
+    return matrix
+
+
 def create_taxon_distribution(taxon, season=Season.ANNUAL):
     """returns a distribution matrix for given taxon taxon by applying filters"""
 
     logger.info("working on taxon {}".format(taxon.taxonkey))
     try:
-        polygon_probability_matrix = filters.polygon.filter(taxon)
-        fao_probability_matrix = filters.fao.filter(taxon)
-        latitude_probability_matrix = filters.latitude.filter(taxon)
 
-        # distribution_matrix = fao_probability_matrix
-        # distribution_matrix = latitude_probability_matrix
-        # distribution_matrix = polygon_probability_matrix
+        matrices = (f(taxon) for f in (
+            filters.polygon.filter,
+            filters.fao.filter,
+            filters.latitude.filter,
+            filters.depth.filter
+        ))
 
-        distribution_matrix = polygon_probability_matrix * \
-            fao_probability_matrix * \
-            latitude_probability_matrix
+        distribution_matrix = combine_probability_matrices(matrices)
 
         return distribution_matrix
 

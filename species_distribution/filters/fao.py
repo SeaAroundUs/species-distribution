@@ -1,16 +1,12 @@
-import logging
-
 import numpy as np
 
 from species_distribution.filters.filter import Filter
 
-logger = logging.getLogger(__name__)
-
 
 class FAOFilter(Filter):
 
-    def filter(self, taxon):
-        logger.debug('applying fao filter')
+    def _filter(self, taxon):
+        probability_matrix = self.get_probability_matrix()
 
         fao_grid = self.grid.get_grid('FAO')
         faos = taxon.faos
@@ -21,11 +17,13 @@ class FAOFilter(Filter):
         for fao in faos:
             mask |= fao_grid == fao
 
-        self.probability_matrix[mask] = 1.0
+        probability_matrix[mask] = 1.0
 
-        return self.probability_matrix
+        return probability_matrix
+
+
+_f = FAOFilter()
 
 
 def filter(*args):
-    f = FAOFilter()
-    return f.filter(*args)
+    return _f.filter(*args)

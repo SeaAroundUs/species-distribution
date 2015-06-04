@@ -40,23 +40,25 @@ class LatitudeFilter(Filter):
         return points, len(lat) - N_n
 
 
-    def filter(self, taxon):
-        self.logger.debug('applying latitude filter')
+    def _filter(self, taxon):
+
+        probability_matrix = self.get_probability_matrix()
+
         if taxon.latsouth >= 0 or taxon.latnorth <= 0:
             # taxon is contained in N or S hemisphere
             arr, N = self.triangular_distribution(taxon.latnorth, taxon.latsouth)
             M = N + len(arr)
-            y_len = self.probability_matrix.shape[1]
-            self.probability_matrix[N:M] = np.tile(arr, (y_len, 1)).transpose()
+            y_len = probability_matrix.shape[1]
+            probability_matrix[N:M] = np.tile(arr, (y_len, 1)).transpose()
         else:
             # taxon straddles equator
 
             # create a mask index array of values meeting the criteria
             # and set probability value of those cells to 1
             mask = (self.grid._lat <= taxon.latnorth) & (self.grid._lat >= taxon.latsouth)
-            self.probability_matrix[mask] = 1.0
+            probability_matrix[mask] = 1.0
 
-        return self.probability_matrix
+        return probability_matrix
 
 
 def filter(*args):
