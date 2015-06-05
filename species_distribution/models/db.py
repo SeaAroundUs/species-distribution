@@ -23,15 +23,6 @@ def session():
     session = Session()
     return session
 
-def create_grid():
-
-    conn = session().connection()
-
-    grid_distribution_intersection_query = """
-    SELECT seq, row, col from grid where geom && (select geom from distribution where taxon=100036 );
-    """
-    conn.execute(grid_distribution_intersection_query)
-
 
 def rows_to_grid(rows, dtype=np.float):
     # convert ordered rows of (row,col,value) to a 2d grid

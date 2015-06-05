@@ -34,8 +34,8 @@ def combine_probability_matrices(matrices):
     matrix = next(matrices)
 
     for m in matrices:
-        # matrix *= m
-        matrix[~m.mask] *= m[~m.mask]
+        matrix *= m
+        # matrix[~m.mask] *= m[~m.mask]
 
     return matrix
 
@@ -47,10 +47,10 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
     try:
 
         matrices = (f(taxon) for f in (
-            filters.polygon.filter,
-            filters.fao.filter,
-            filters.latitude.filter,
-            filters.depth.filter
+            # filters.polygon.filter,
+            # filters.fao.filter,
+            # filters.latitude.filter,
+            filters.depth.filter,
         ))
 
         distribution_matrix = combine_probability_matrices(matrices)
