@@ -47,9 +47,9 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
     try:
 
         matrices = (f(taxon) for f in (
-            # filters.polygon.filter,
-            # filters.fao.filter,
-            # filters.latitude.filter,
+            filters.polygon.filter,
+            filters.fao.filter,
+            filters.latitude.filter,
             filters.depth.filter,
         ))
 
@@ -68,7 +68,6 @@ def main(args):
     logger.info("starting distribution")
 
     sesh = session()
-    distribution_file = io.create_output_file(force=args.force)
     grid = Grid()
 
     # get taxa
@@ -81,34 +80,24 @@ def main(args):
 
     logger.info("Found {} taxa".format(len(taxa)))
 
-    # futures = {}
-    # executor = concurrent.futures.ProcessPoolExecutor(max_workers=args.threads)
-
     for taxon in taxa:
         if not taxon:
             logger.critical("taxon is empty.  I don't know why.")
             continue
 
-        if str(taxon.taxonkey) in distribution_file.keys():
+        if not args.force and str(taxon.taxonkey) in io.completed_taxon():
             logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxon.taxonkey))
             continue
 
         distribution = create_taxon_distribution(taxon, {'season': Season.ANNUAL})
-        # future = executor.submit(create_taxon_distribution, taxon, {'season': Season.ANNUAL})
-        # futures[future] = taxon
-
-        # for future in concurrent.futures.as_completed(futures):
-        # distribution = future.result()
         if distribution is None:
             logger.debug('empty distribution returned')
             continue
-        # taxon = futures[future]
-        io.save_image(array=distribution, name=taxon.taxonkey)
-        _dataset = distribution_file.create_dataset(str(taxon.taxonkey), data=distribution)
+
+        io.save(distribution, taxon, force=args.force)
+
         logger.info('taxon {} complete'.format(taxon.taxonkey))
 
-    # executor.shutdown()
-
-    distribution_file.close()
+    io.close()
     logger.info('distribution complete')
     logger.debug('grid cache usage: {}'.format(grid.get_grid.cache_info()))

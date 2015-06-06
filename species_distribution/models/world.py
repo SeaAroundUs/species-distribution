@@ -43,6 +43,12 @@ class Grid():
 
         assert(self.shape == self._lon.shape)
 
+    def index_to_seq(self, index):
+        """ given an (x,y) index to the grid, return seq number """
+        y, x = index
+        h, w = self.shape
+        return (x + w * y) + 1
+
     @property
     def field_names(self):
         return (c.name for c in GridPoint.__table__.columns)
