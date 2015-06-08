@@ -85,7 +85,7 @@ def main(args):
             logger.critical("taxon is empty.  I don't know why.")
             continue
 
-        if not args.force and str(taxon.taxonkey) in io.completed_taxon():
+        if not args.force and '/taxa/' + str(taxon.taxonkey) in io.completed_taxon():
             logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxon.taxonkey))
             continue
 
@@ -94,7 +94,7 @@ def main(args):
             logger.debug('empty distribution returned')
             continue
 
-        io.save(distribution, taxon, force=args.force)
+        io.save_hdf5(distribution, taxon, force=args.force)
 
         logger.info('taxon {} complete'.format(taxon.taxonkey))
 

@@ -15,7 +15,7 @@ class Filter():
         self.logger = logging.getLogger(__name__)
 
     def get_probability_matrix(self):
-        return np.ma.MaskedArray(data=np.full(self.grid.shape, None, dtype=float), mask=True)
+        return np.ma.MaskedArray(data=np.full(self.grid.shape, np.nan, dtype=float), mask=True)
 
     def filter(self, *args, **kwargs):
         self.logger.debug('applying {}'.format(self.__class__.__name__))

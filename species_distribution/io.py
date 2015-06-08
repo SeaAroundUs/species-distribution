@@ -1,3 +1,4 @@
+import io
 import logging
 import os
 
@@ -13,6 +14,15 @@ logger = logging.getLogger(__name__)
 _distribution_file = None
 
 
+def h5py_dataset_to_numpy(func):
+    """ decorator to convert a first argument of h5py.Dataset to numpy.array """
+    def decorator(*args, **kwargs):
+        if type(args[0]) == h5py.Dataset:
+            args = (args[0][:], ) + args[1:]
+        return func(*args, **kwargs)
+    return decorator
+
+
 def save_image(array, name):
     """saves 2d array of values 0-1 to a grayscale PNG"""
     array *= 255
@@ -23,32 +33,26 @@ def save_image(array, name):
     image.save(png)
 
 
-def insert_distribution_table(distribution, taxon):
-    with engine.connect() as connection:
-
-        connection.execute("DELETE FROM taxon_distribution WHERE taxonkey = %s", taxon.taxonkey)
-
-        query = "INSERT INTO taxon_distribution (taxonkey, cellid, relativeabundance) VALUES (%s, %s, %s)"
-
-        def records():
-            for x in range(distribution.shape[1]):
-                for y in range(distribution.shape[0]):
-                    if not distribution.mask[y, x]:
-                        seq = (x + y * distribution.shape[1]) + 1
-                        yield taxon.taxonkey, seq, distribution[y, x]
-
-        connection.execute(query, list(records()))
-
-
 def create_output_file(force=False):
 
+    new_file = True
     if os.path.isfile(settings.DISTRIBUTION_FILE):
         if force:
             os.unlink(settings.DISTRIBUTION_FILE)
         else:
-            logger.warn("Appending to existing file {}".format(settings.DISTRIBUTION_FILE))
+            logger.info("Opening existing file {}".format(settings.DISTRIBUTION_FILE))
+            new_file = False
 
-    return h5py.File(settings.DISTRIBUTION_FILE, 'a')
+    distribution_file = h5py.File(settings.DISTRIBUTION_FILE, 'a')
+
+    if new_file:
+        distribution_file.create_group('taxa')
+
+        dimensions = distribution_file.create_group('dimensions')
+        dimensions['latitude'] = np.arange(90, -90, -.5)
+        dimensions['longitude'] = np.arange(-180, 180, .5)
+
+    return distribution_file
 
 
 def get_distribution_file(force=False):
@@ -60,21 +64,55 @@ def get_distribution_file(force=False):
     return _distribution_file
 
 
+@h5py_dataset_to_numpy
+def save_database(distribution, taxonkey):
+
+    with engine.connect() as connection:
+        # psycopg2 isn't using executemany for some reason, it is doing one insert
+        # per record. Since the sqlalchemy connection object doesn't attempty to hide
+        # the raw connection, use it to insert the data with psycopg2.copy_from
+
+        raw_conn = connection.connection.connection
+        cursor = raw_conn.cursor()
+        cursor.execute("DELETE FROM taxon_distribution WHERE taxonkey = %s", (taxonkey, ))
+
+        # scaled_distribution = ((10 ** 9) *  distribution.copy()).astype(np.int32)
+
+        def records():
+            for y, row in enumerate(distribution):
+                for x, value in enumerate(row):
+                    if not np.isnan(value):
+                        scaled_value = 1000000000 * int(value)
+                        seq = (x + y * distribution.shape[1]) + 1
+                        yield '{}\t{}\t{}'.format(taxonkey, seq, scaled_value)
+
+        f = io.StringIO('\n'.join(records()))
+        cursor.copy_from(f, 'taxon_distribution', columns=('taxonkey', 'cellid', 'relativeabundance'))
+        raw_conn.commit()
+
+def save_hdf5(distribution, taxon, force=None):
+
+    distribution_file = get_distribution_file(force=force)
+    dataset = distribution_file.create_dataset('taxa/' + str(taxon.taxonkey), data=distribution)
+
+    dataset.dims.create_scale(distribution_file['dimensions/latitude'])
+    dataset.dims.create_scale(distribution_file['dimensions/longitude'])
+    dataset.dims[0].attach_scale(distribution_file['dimensions/latitude'])
+    dataset.dims[1].attach_scale(distribution_file['dimensions/longitude'])
+
 def save(distribution, taxon, force=False):
     """ creates products for distribution and taxon """
 
-    insert_distribution_table(distribution, taxon)
-
+    save_database(distribution, taxon.taxonkey)
+    save_hdf5(distribution, taxon, force=force)
     save_image(array=distribution, name=taxon.taxonkey)
-
-    distribution_file = get_distribution_file(force=force)
-    distribution_file.create_dataset(str(taxon.taxonkey), data=distribution)
 
 
 def close():
 
     global _distribution_file
     _distribution_file.close()
+
 
 def completed_taxon():
     distribution_file = get_distribution_file()
