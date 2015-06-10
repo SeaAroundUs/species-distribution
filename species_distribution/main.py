@@ -2,7 +2,9 @@
 
 # import concurrent.futures
 from enum import Enum
+import functools
 import logging
+import operator
 
 import species_distribution.exceptions as exceptions
 import species_distribution.io as io
@@ -30,15 +32,7 @@ def combine_probability_matrices(matrices):
     """given a sequence of probability matrices, combine them into a
     single matrix and return it"""
 
-    # shift off the first matrix to start
-    matrix = next(matrices)
-
-    for m in matrices:
-        matrix *= m
-        # matrix[~m.mask] *= m[~m.mask]
-
-    return matrix
-
+    return functools.reduce(operator.mul, matrices)
 
 def create_taxon_distribution(taxon, season=Season.ANNUAL):
     """returns a distribution matrix for given taxon taxon by applying filters"""
@@ -54,7 +48,6 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
         ))
 
         distribution_matrix = combine_probability_matrices(matrices)
-
         return distribution_matrix
 
     except exceptions.InvalidTaxonException as e:
@@ -90,6 +83,7 @@ def main(args):
             continue
 
         distribution = create_taxon_distribution(taxon, {'season': Season.ANNUAL})
+
         if distribution is None:
             logger.debug('empty distribution returned')
             continue

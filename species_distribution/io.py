@@ -23,6 +23,7 @@ def h5py_dataset_to_numpy(func):
     return decorator
 
 
+@h5py_dataset_to_numpy
 def save_image(array, name):
     """saves 2d array of values 0-1 to a grayscale PNG"""
     array *= 255
@@ -48,9 +49,9 @@ def create_output_file(force=False):
     if new_file:
         distribution_file.create_group('taxa')
 
-        dimensions = distribution_file.create_group('dimensions')
-        dimensions['latitude'] = np.arange(90, -90, -.5)
-        dimensions['longitude'] = np.arange(-180, 180, .5)
+        # dimensions = distribution_file.create_group('dimensions')
+        distribution_file['latitude'] = np.arange(90, -90, -.5)
+        distribution_file['longitude'] = np.arange(-180, 180, .5)
 
     return distribution_file
 
@@ -76,8 +77,6 @@ def save_database(distribution, taxonkey):
         cursor = raw_conn.cursor()
         cursor.execute("DELETE FROM taxon_distribution WHERE taxonkey = %s", (taxonkey, ))
 
-        # scaled_distribution = ((10 ** 9) *  distribution.copy()).astype(np.int32)
-
         def records():
             for y, row in enumerate(distribution):
                 for x, value in enumerate(row):
@@ -90,15 +89,16 @@ def save_database(distribution, taxonkey):
         cursor.copy_from(f, 'taxon_distribution', columns=('taxonkey', 'cellid', 'relativeabundance'))
         raw_conn.commit()
 
+
 def save_hdf5(distribution, taxon, force=None):
+    distribution[distribution.mask] = np.nan
 
     distribution_file = get_distribution_file(force=force)
     dataset = distribution_file.create_dataset('taxa/' + str(taxon.taxonkey), data=distribution)
 
-    dataset.dims.create_scale(distribution_file['dimensions/latitude'])
-    dataset.dims.create_scale(distribution_file['dimensions/longitude'])
-    dataset.dims[0].attach_scale(distribution_file['dimensions/latitude'])
-    dataset.dims[1].attach_scale(distribution_file['dimensions/longitude'])
+    dataset.dims[0].attach_scale(distribution_file['latitude'])
+    dataset.dims[1].attach_scale(distribution_file['longitude'])
+
 
 def save(distribution, taxon, force=False):
     """ creates products for distribution and taxon """
