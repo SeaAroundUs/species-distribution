@@ -34,6 +34,7 @@ def combine_probability_matrices(matrices):
 
     return functools.reduce(operator.mul, matrices)
 
+
 def create_taxon_distribution(taxon, season=Season.ANNUAL):
     """returns a distribution matrix for given taxon taxon by applying filters"""
 

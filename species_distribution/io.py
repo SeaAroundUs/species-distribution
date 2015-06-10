@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 
 from .models.db import engine
+from .utils import IteratorFile
 import settings
 
 logger = logging.getLogger(__name__)
@@ -77,15 +78,15 @@ def save_database(distribution, taxonkey):
         cursor = raw_conn.cursor()
         cursor.execute("DELETE FROM taxon_distribution WHERE taxonkey = %s", (taxonkey, ))
 
-        def records():
-            for y, row in enumerate(distribution):
-                for x, value in enumerate(row):
-                    if not np.isnan(value):
-                        scaled_value = 1000000000 * int(value)
-                        seq = (x + y * distribution.shape[1]) + 1
-                        yield '{}\t{}\t{}'.format(taxonkey, seq, scaled_value)
+        r = distribution.ravel()
+        indexes = np.where(~np.isnan(r))[0]
+        scaled_distribution = r.astype(int) * 1000000000
 
-        f = io.StringIO('\n'.join(records()))
+        def records():
+            for seq, value in zip(indexes + 1, scaled_distribution[indexes]):
+                yield '{}\t{}\t{}\n'.format(taxonkey, seq, value)
+
+        f = IteratorFile(records())
         cursor.copy_from(f, 'taxon_distribution', columns=('taxonkey', 'cellid', 'relativeabundance'))
         raw_conn.commit()
 

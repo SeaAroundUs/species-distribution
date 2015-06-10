@@ -1,5 +1,3 @@
-import numpy as np
-
 from species_distribution.filters.filter import Filter
 
 
