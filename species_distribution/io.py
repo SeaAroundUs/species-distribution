@@ -70,7 +70,7 @@ def get_distribution_file(force=False):
 def save_database(distribution, taxonkey):
 
     with engine.connect() as connection:
-        # psycopg2 isn't using executemany for some reason, it is doing one insert
+        # psycopg2 isn't using executemany, it is doing one insert
         # per record. Since the sqlalchemy connection object doesn't attempty to hide
         # the raw connection, use it to insert the data with psycopg2.copy_from
 
@@ -80,7 +80,7 @@ def save_database(distribution, taxonkey):
 
         r = distribution.ravel()
         indexes = np.where(~np.isnan(r))[0]
-        scaled_distribution = r.astype(int) * 1000000000
+        scaled_distribution = (r * 1000000000).astype(int)
 
         def records():
             for seq, value in zip(indexes + 1, scaled_distribution[indexes]):

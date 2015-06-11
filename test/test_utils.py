@@ -1,5 +1,7 @@
 import unittest2
 
+import numpy as np
+
 from species_distribution import utils
 
 
@@ -33,3 +35,15 @@ class TestUtils(unittest2.TestCase):
         expected = '0'
         self.assertEqual(expected, actual)
 
+    def test_combine_probability_matrices(self):
+        m1 = np.ma.MaskedArray(np.full((2, 2), np.nan), mask=True)
+        m2 = np.ma.MaskedArray(np.full((2, 2), np.nan), mask=True)
+
+        m1[0, 0] = .5
+        m2[0, 0] = .1
+        m2[0, 1] = .1
+
+        result = utils.combine_probability_matrices((m1, m2))
+
+        self.assertAlmostEqual(result[0, 0], .05)
+        self.assertFalse(result[0, 1])

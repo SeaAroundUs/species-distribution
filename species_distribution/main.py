@@ -2,9 +2,7 @@
 
 # import concurrent.futures
 from enum import Enum
-import functools
 import logging
-import operator
 
 import species_distribution.exceptions as exceptions
 import species_distribution.io as io
@@ -12,6 +10,7 @@ from species_distribution.models.db import session
 from species_distribution.models.taxa import TaxonPara
 from species_distribution.models.world import Grid
 import species_distribution.filters as filters
+import species_distribution.utils as utils
 
 
 def configure_logging(level):
@@ -28,13 +27,6 @@ class Season(Enum):
     WINTER = 2
 
 
-def combine_probability_matrices(matrices):
-    """given a sequence of probability matrices, combine them into a
-    single matrix and return it"""
-
-    return functools.reduce(operator.mul, matrices)
-
-
 def create_taxon_distribution(taxon, season=Season.ANNUAL):
     """returns a distribution matrix for given taxon taxon by applying filters"""
 
@@ -48,7 +40,7 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
             filters.depth.filter,
         ))
 
-        distribution_matrix = combine_probability_matrices(matrices)
+        distribution_matrix = utils.combine_probability_matrices(matrices)
         return distribution_matrix
 
     except exceptions.InvalidTaxonException as e:

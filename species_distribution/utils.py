@@ -1,3 +1,5 @@
+import functools
+import operator
 import io
 import sys
 
@@ -29,3 +31,10 @@ class IteratorFile(io.TextIOBase):
 
     def readline(self):
         return next(self._it)
+
+
+def combine_probability_matrices(matrices):
+    """given a sequence of probability matrices, combine them into a
+    single matrix and return it"""
+
+    return functools.reduce(operator.mul, matrices)
