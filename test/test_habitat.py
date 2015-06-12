@@ -1,8 +1,8 @@
 import unittest2
 
-import numpy as np
-
-from species_distribution import filters
+from species_distribution.models.db import session
+import species_distribution.filters as filters
+from species_distribution.models.taxa import Taxon
 
 
 class TestHabitat(unittest2.TestCase):
@@ -24,3 +24,13 @@ class TestHabitat(unittest2.TestCase):
         self.assertAlmostEqual(values[0], 0)
         self.assertAlmostEqual(values[1], 0)
         self.assertAlmostEqual(values[2], 1)
+
+    def test_filter(self):
+
+        filter = filters.habitat.HabitatFilter()
+
+        key = 100025
+        taxon = session().query(Taxon).filter_by(taxonkey=key).one()
+
+        probability_distribution = filter.filter(taxon)
+        self.assertEqual(probability_distribution.shape, (360, 720))

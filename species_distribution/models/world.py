@@ -50,6 +50,20 @@ class Grid():
         return (x + w * y) + 1
 
     @property
+    @functools.lru_cache(maxsize=2**32)
+    def area_coast(self):
+        coastal_prop = self.get_grid('CoastalProp')
+        water_area = self.get_grid('Area')  # Area <-> WaterArea
+        return coastal_prop * water_area
+
+    @property
+    @functools.lru_cache(maxsize=2**32)
+    def area_offshore(self):
+        coastal_prop = self.get_grid('CoastalProp')
+        water_area = self.get_grid('Area')  # Area <-> WaterArea
+        return (1 - coastal_prop) * water_area
+
+    @property
     def field_names(self):
         return (c.name for c in GridPoint.__table__.columns)
 
@@ -61,6 +75,7 @@ class Grid():
     @functools.lru_cache(maxsize=2 ** 32)
     def get_grid(self, field='SST'):
         """returns a spatial 2D numpy array of the field specified"""
+
         attr = getattr(GridPoint, field)
 
         query = session() \

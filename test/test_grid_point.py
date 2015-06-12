@@ -22,4 +22,12 @@ class TestGridPoint(unittest2.TestCase):
 
     def test_grid_value(self):
         grid = Grid().get_grid(field='SST')
-        self.assertEqual(-1.79, grid[0][0])
+        self.assertEqual(-1.79, grid[0, 0])
+
+    def test_derived_field_area_coast(self):
+        grid = Grid().area_coast
+        self.assertEqual(0.0, grid[0, 0])
+
+    def test_derived_field_area_offshore(self):
+        grid = Grid().area_offshore
+        self.assertEqual(13.48, grid[0, 0])

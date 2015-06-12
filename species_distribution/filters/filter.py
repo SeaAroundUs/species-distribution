@@ -11,7 +11,6 @@ class Filter():
     """
     def __init__(self):
         self.grid = Grid()
-        self.probability_matrix = self.get_probability_matrix()
         self.logger = logging.getLogger(__name__)
 
     def get_probability_matrix(self):

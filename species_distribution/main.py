@@ -7,7 +7,7 @@ import logging
 import species_distribution.exceptions as exceptions
 import species_distribution.io as io
 from species_distribution.models.db import session
-from species_distribution.models.taxa import TaxonPara
+from species_distribution.models.taxa import Taxon
 from species_distribution.models.world import Grid
 import species_distribution.filters as filters
 import species_distribution.utils as utils
@@ -38,6 +38,7 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
             filters.fao.filter,
             filters.latitude.filter,
             filters.depth.filter,
+            filters.habitat.filter,
         ))
 
         distribution_matrix = utils.combine_probability_matrices(matrices)
@@ -58,11 +59,11 @@ def main(args):
 
     # get taxa
     if args.limit:
-        taxa = sesh.query(TaxonPara).all()[0:args.limit]
+        taxa = sesh.query(Taxon).all()[0:args.limit]
     elif args.taxon:
-        taxa = sesh.query(TaxonPara).filter_by(taxonkey=args.taxon).all()
+        taxa = sesh.query(Taxon).filter_by(taxonkey=args.taxon).all()
     else:
-        taxa = sesh.query(TaxonPara).all()
+        taxa = sesh.query(Taxon).all()
 
     logger.info("Found {} taxa".format(len(taxa)))
 
