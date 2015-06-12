@@ -1,4 +1,3 @@
-import io
 import logging
 import os
 
@@ -51,8 +50,8 @@ def create_output_file(force=False):
         distribution_file.create_group('taxa')
 
         # dimensions = distribution_file.create_group('dimensions')
-        distribution_file['latitude'] = np.arange(90, -90, -.5)
-        distribution_file['longitude'] = np.arange(-180, 180, .5)
+        distribution_file['latitude'] = np.arange(89.75, -90, -.5)
+        distribution_file['longitude'] = np.arange(-179.75, 180, .5)
 
     return distribution_file
 
