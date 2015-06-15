@@ -1,11 +1,11 @@
 """Filters which accept a distribution matrix, and return a modified matrix"""
 
 from species_distribution.models.db import engine
-from species_distribution.filters.filter import Filter
+from species_distribution.filters.filter import BaseFilter
 from species_distribution import exceptions
 
 
-class PolygonFilter(Filter):
+class Filter(BaseFilter):
 
     def get_cells_for_taxon(self, taxon):
 
@@ -44,10 +44,3 @@ class PolygonFilter(Filter):
         probability_matrix[indexes[0], indexes[1]] = 1.0
 
         return probability_matrix
-
-
-_f = PolygonFilter()
-
-
-def filter(*args):
-    return _f.filter(*args)

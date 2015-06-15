@@ -27,7 +27,7 @@ class TestHabitat(unittest2.TestCase):
 
     def test_filter(self):
 
-        filter = filters.habitat.HabitatFilter()
+        filter = filters.habitat.Filter()
 
         key = 100025
         taxon = session().query(Taxon).filter_by(taxonkey=key).one()

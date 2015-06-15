@@ -1,7 +1,7 @@
-from species_distribution.filters.filter import Filter
+from species_distribution.filters.filter import BaseFilter
 
 
-class DepthFilter(Filter):
+class Filter(BaseFilter):
 
     def _filter(self, taxon):
 
@@ -21,10 +21,3 @@ class DepthFilter(Filter):
         probability_matrix[mask] = 1.0
 
         return probability_matrix
-
-
-_f = DepthFilter()
-
-
-def filter(*args):
-    return _f.filter(*args)

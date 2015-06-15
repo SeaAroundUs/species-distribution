@@ -1,10 +1,12 @@
+import functools
+import operator
+
 import numpy as np
 
-from species_distribution.filters.filter import Filter
+from species_distribution.filters.filter import BaseFilter
 from species_distribution.models.db import session
 from species_distribution.models.taxa import TaxonHabitat
 from species_distribution.models.world import Grid
-from species_distribution.utils import combine_probability_matrices
 
 
 class MembershipFunction():
@@ -30,7 +32,7 @@ class MembershipFunction():
         return np.interp(value, self.break_points, y_coords)
 
 
-class HabitatFilter(Filter):
+class Filter(BaseFilter):
 
     def versatility(self, taxon):
         """ membership function for versatility.  14-4.pdf pp. 32 """
@@ -103,26 +105,16 @@ class HabitatFilter(Filter):
             habitat_effect = weight * alpha * habitat_grid
             ma = np.ma.MaskedArray(data=habitat_effect, mask=False)
 
-            self.logger.debug(np.sum(ma))
             if ma.sum() > 0:
                 matrices.append(ma)
             # import ipdb;ipdb.set_trace()
 
         # combine and normalize:
         if len(matrices) > 0:
-            # import ipdb;ipdb.set_trace()
-            import functools, operator
             probability_matrix = functools.reduce(operator.mul, matrices)
             # probability_matrix.mask[np.where(probability_matrix <= 0)[0]] = True
             probability_matrix /= probability_matrix.max()
-            # from PIL import Image
-            # Image.fromarray(probability_matrix).show()
-            self.logger.debug(np.sum(probability_matrix))
             return probability_matrix
         else:
             # empty
             return self.get_probability_matrix()
-
-def filter(*args):
-    f = HabitatFilter()
-    return f.filter(*args)

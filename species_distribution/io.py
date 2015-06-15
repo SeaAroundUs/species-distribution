@@ -111,7 +111,8 @@ def save(distribution, taxon, force=False):
 def close():
 
     global _distribution_file
-    _distribution_file.close()
+    if _distribution_file:
+        _distribution_file.close()
 
 
 def completed_taxon():
