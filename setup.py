@@ -1,10 +1,25 @@
-from setuptools import setup
+import subprocess
+
+from setuptools import setup, find_packages
 
 import unittest2
 
+def get_hash():
+    return subprocess \
+            .check_output(('git', 'rev-parse', '--short', 'HEAD')) \
+            .strip() \
+            .decode('ascii')
+
 setup(
     name='species_distribution',
-    version='2.0.0',
+    version='2.0.0-dev' + get_hash(),
     description='Species distribution for Sea Around Us Project',
-    test_suite='unittest2.collector'
+    test_suite='unittest2.collector',
+    packages=find_packages(),
+    install_requires=['h5py', 'numpy', 'psycopg2', 'python-dateutil', 'SQLAlchemy', 'unittest2' ],
+    scripts=[
+        'bin/h5-to-database', 
+        'bin/h5-to-png', 
+        'bin/species-distribution'
+    ],
 )

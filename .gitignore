@@ -3,3 +3,5 @@ species_distribution.egg-info/
 *.hdf5
 png/
 gifs/
+build/
+dist/
