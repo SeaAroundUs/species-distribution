@@ -8,7 +8,7 @@ import settings
 import species_distribution.exceptions as exceptions
 import species_distribution.io as io
 from species_distribution.models.db import session
-from species_distribution.models.taxa import Taxon
+from species_distribution.models.taxa import Taxon, TaxonDistribution
 from species_distribution.models.world import Grid
 import species_distribution.filters as filters
 import species_distribution.utils as utils
@@ -87,7 +87,10 @@ def main(args):
     elif args.taxon:
         taxa = sesh.query(Taxon).filter(Taxon.taxonkey.in_(args.taxon)).all()
     else:
-        taxa = sesh.query(Taxon).all()
+        # only select taxa which have a polygon (distribtution table, modelled "TaxaDistribution")
+        taxa = sesh.query(Taxon) \
+            .join(TaxonDistribution, Taxon.taxonkey == TaxonDistribution.taxon) \
+            .all()
 
     logger.info("Found {} taxa".format(len(taxa)))
 

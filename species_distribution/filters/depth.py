@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 from species_distribution.filters.filter import BaseFilter
 
@@ -47,8 +49,8 @@ class Filter(BaseFilter):
             # what is left can be integrated and divided by total area to get
             # cell probability
 
-            ZP = sorted(list(zip(xp, fp)) + list(zip(world_depths, interpolated_values)))
-            ZP_in_range = list(filter(lambda x: x[0] >= world_depths[0] and x[0] <= world_depths[1], ZP))
+            ZP = sorted(itertools.chain(zip(xp, fp), zip(world_depths, interpolated_values)))
+            ZP_in_range = filter(lambda x: x[0] >= world_depths[0] and x[0] <= world_depths[1], ZP)
             x, y = zip(*ZP_in_range)
             P = np.trapz(y, x) / triangle_area
 

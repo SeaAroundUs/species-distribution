@@ -105,7 +105,13 @@ def save_hdf5(distribution, taxon, force=False):
         else:
             del distribution_file[key]
 
-    dataset = distribution_file.create_dataset(key, data=distribution)
+    dataset = distribution_file.create_dataset(
+        key,
+        data=distribution,
+        compression='gzip',
+        shuffle=True,  # shuffle chunks to help gzip
+        fletcher32=True  # checksum
+    )
 
     dataset.dims[0].attach_scale(distribution_file['latitude'])
     dataset.dims[1].attach_scale(distribution_file['longitude'])

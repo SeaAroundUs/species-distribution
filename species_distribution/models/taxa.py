@@ -50,6 +50,16 @@ class Taxon(SpecDisModel):
 #     Offshore_Back = Column(Float())
 
 
+class TaxonDistribution(SpecDisModel):
+    __table__ = Table(
+        'distribution',
+        Base.metadata,
+        Column('taxon', Integer(), primary_key=True),
+        autoload=True,
+        autoload_with=engine
+    )
+
+
 class TaxonHabitat(SpecDisModel):
     __table__ = Table(
         'taxon_habitat',
