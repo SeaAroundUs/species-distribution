@@ -1,11 +1,13 @@
+import functools
 import logging
 import os
 
 import h5py
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 
 from .models.db import engine
+from .exceptions import ExistingRecordException
 from .utils import IteratorFile
 import settings
 
@@ -24,25 +26,26 @@ def h5py_dataset_to_numpy(func):
 
 
 @h5py_dataset_to_numpy
-def save_image(array, name):
+def save_image(array, name, enhance=False):
     """saves 2d array of values 0-1 to a grayscale PNG"""
-    array *= 255
-    array = array.astype(np.uint8)
-    image = Image.fromarray(array)
     png = os.path.join(settings.PNG_DIR, str(name) + '.png')
     logger.debug('writing {}'.format(png))
+
+    array *= 255 / array.max()
+    array = array.astype(np.uint8)
+    image = Image.fromarray(array)
+    if enhance:
+        image = ImageOps.equalize(image)
+        image = ImageOps.autocontrast(image)
     image.save(png)
 
 
-def create_output_file(force=False):
+def create_output_file():
 
     new_file = True
     if os.path.isfile(settings.DISTRIBUTION_FILE):
-        if force:
-            os.unlink(settings.DISTRIBUTION_FILE)
-        else:
-            logger.info("Opening existing file {}".format(settings.DISTRIBUTION_FILE))
-            new_file = False
+        logger.info("Opening existing file {}".format(settings.DISTRIBUTION_FILE))
+        new_file = False
 
     distribution_file = h5py.File(settings.DISTRIBUTION_FILE, 'a')
 
@@ -56,12 +59,12 @@ def create_output_file(force=False):
     return distribution_file
 
 
-def get_distribution_file(force=False):
+def get_distribution_file():
 
     global _distribution_file
 
     if not _distribution_file:
-        _distribution_file = create_output_file(force=force)
+        _distribution_file = create_output_file()
     return _distribution_file
 
 
@@ -89,21 +92,30 @@ def save_database(distribution, taxonkey):
         raw_conn.commit()
 
 
-def save_hdf5(distribution, taxon, force=None):
+def save_hdf5(distribution, taxon, force=False):
     distribution[distribution.mask] = np.nan
 
-    distribution_file = get_distribution_file(force=force)
-    dataset = distribution_file.create_dataset('taxa/' + str(taxon.taxonkey), data=distribution)
+    distribution_file = get_distribution_file()
+
+    key = 'taxa/' + str(taxon.taxonkey)
+
+    if key in completed_taxon():
+        if not force:
+            raise ExistingRecordException("{} exists, and not using the force".format(key))
+        else:
+            del distribution_file[key]
+
+    dataset = distribution_file.create_dataset(key, data=distribution)
 
     dataset.dims[0].attach_scale(distribution_file['latitude'])
     dataset.dims[1].attach_scale(distribution_file['longitude'])
 
 
-def save(distribution, taxon, force=False):
+def save(distribution, taxon):
     """ creates products for distribution and taxon """
 
     save_database(distribution, taxon.taxonkey)
-    save_hdf5(distribution, taxon, force=force)
+    save_hdf5(distribution, taxon)
     save_image(array=distribution, name=taxon.taxonkey)
 
 
@@ -113,7 +125,7 @@ def close():
     if _distribution_file:
         _distribution_file.close()
 
-
+@functools.lru_cache(maxsize=2**32)
 def completed_taxon():
     distribution_file = get_distribution_file()
     return distribution_file.keys()

@@ -2,7 +2,7 @@
 
 from enum import Enum
 import logging
-import os
+import signal
 
 import settings
 import species_distribution.exceptions as exceptions
@@ -13,6 +13,8 @@ from species_distribution.models.world import Grid
 import species_distribution.filters as filters
 import species_distribution.utils as utils
 
+STOP = False
+
 
 def configure_logging(level):
     logging.basicConfig(
@@ -20,6 +22,14 @@ def configure_logging(level):
         level=level)
 
 logger = logging.getLogger(__name__)
+
+
+def signal_handler(*args):
+    global STOP
+    logger.warning("SIGINT caught, raising STOP flag")
+    STOP = True
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 class Season(Enum):
@@ -54,7 +64,7 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
                 io.save_image(m, fname)
 
             fname = taxon.taxonkey
-            io.save_image(distribution_matrix, fname)
+            io.save_image(distribution_matrix, fname, enhance=False)
         return distribution_matrix
 
     except exceptions.InvalidTaxonException as e:
@@ -64,6 +74,7 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
 
 
 def main(args):
+
     configure_logging(args.verbose and logging.DEBUG or logging.INFO)
     logger.info("starting distribution")
 
@@ -74,13 +85,17 @@ def main(args):
     if args.limit:
         taxa = sesh.query(Taxon).all()[0:args.limit]
     elif args.taxon:
-        taxa = sesh.query(Taxon).filter_by(taxonkey=args.taxon).all()
+        taxa = sesh.query(Taxon).filter(Taxon.taxonkey.in_(args.taxon)).all()
     else:
         taxa = sesh.query(Taxon).all()
 
     logger.info("Found {} taxa".format(len(taxa)))
 
     for taxon in taxa:
+        if STOP:
+            logger.critical("STOP raised")
+            break
+
         if not taxon:
             logger.critical("taxon is empty.  I don't know why.")
             continue
