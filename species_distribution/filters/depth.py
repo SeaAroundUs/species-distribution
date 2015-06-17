@@ -1,7 +1,8 @@
 import itertools
 
 import numpy as np
-from species_distribution.filters.filter import BaseFilter
+from .filter import BaseFilter
+from .polygon import Filter as PolygonFilter
 
 
 class Filter(BaseFilter):
@@ -17,14 +18,14 @@ class Filter(BaseFilter):
         # world goes from surface at EleMax: 0 to EleMin: -N at depth
         # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
-        world_mindepth = self.grid.get_grid('EleMax')
-        world_maxdepth = self.grid.get_grid('EleMin')
+        world_depth = self.grid.get_grid('EleAvg')
 
         mindepth = -taxon.mindepth
         maxdepth = -taxon.maxdepth
 
-        # exclude cells outside taxon depth range
-        mask = ~((world_mindepth < maxdepth) | (world_maxdepth > mindepth))
+        # get polygon distribution to reduce work done here
+        polygon_distribution = PolygonFilter.filter(taxon)
+        mask = (world_depth > mindepth) | (world_depth >= 0) | polygon_distribution.mask
 
         # create scalene triangle properties
         one_third_depth = mindepth - (mindepth - maxdepth) / 3
@@ -38,19 +39,19 @@ class Filter(BaseFilter):
 
         # iterate over the valid values
         for i, j in np.ndindex(probability_matrix.shape):
-            if not mask[i, j]:
+            if mask[i, j]:
                 continue
 
-            world_depths = [world_maxdepth[i, j], world_mindepth[i, j]]
-            interpolated_values = np.interp(world_depths, xp, fp)
+            depth = world_depth[i, j]
+            interpolated_value = np.interp([depth], xp, fp)[0]
 
             # create list of (Z,P) tuples where Z = depth and P = probabilty
             # order by depth, and cast out everything outside the world range
             # what is left can be integrated and divided by total area to get
             # cell probability
 
-            ZP = sorted(itertools.chain(zip(xp, fp), zip(world_depths, interpolated_values)))
-            ZP_in_range = filter(lambda x: x[0] >= world_depths[0] and x[0] <= world_depths[1], ZP)
+            ZP = sorted(itertools.chain(zip(xp, fp), ((depth, interpolated_value),)))
+            ZP_in_range = list(filter(lambda x: x[0] >= depth, ZP))
             x, y = zip(*ZP_in_range)
             P = np.trapz(y, x) / triangle_area
 
