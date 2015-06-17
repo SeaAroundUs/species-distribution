@@ -46,6 +46,7 @@ class Filter(BaseFilter):
 
         sesh = session()
         habitat = sesh.query(TaxonHabitat).filter_by(TaxonKey=taxon.taxonkey).one()
+        # sesh.close()
 
         habitats = [
             # {'habitat_attr': 'Inshore', 'world_attr': 'Inshore'},
@@ -62,8 +63,6 @@ class Filter(BaseFilter):
 
         probability_matrix = self.get_probability_matrix()
         grid = Grid()
-
-        total_area = grid.get_grid('TArea')
 
         # total_abundance = 0
         # habitat_area = grid.area_coast
@@ -95,25 +94,22 @@ class Filter(BaseFilter):
             habitat_grid = grid.get_grid(hab['world_attr'])
 
             # Estimate the radius of the habitat, assuming it is circular in shape
-            R = np.sqrt(total_area / np.pi)
+            R = np.sqrt(habitat_grid / np.pi)
 
             # 'Estimate the distance between cell boundary and boundary of habitat
             d1 = (D - R).clip(0)
 
             alpha = (1 - d1 / habitat.EffectiveD).clip(0, 1)
 
-            habitat_effect = weight * alpha * habitat_grid
+            habitat_effect = weight * alpha * (habitat_grid / total_area)
             ma = np.ma.MaskedArray(data=habitat_effect, mask=False)
-
             if ma.sum() > 0:
                 matrices.append(ma)
-            # import ipdb;ipdb.set_trace()
 
         # combine and normalize:
         if len(matrices) > 0:
-            probability_matrix = functools.reduce(operator.mul, matrices)
-            # probability_matrix.mask[np.where(probability_matrix <= 0)[0]] = True
-            probability_matrix /= probability_matrix.max()
+            probability_matrix = functools.reduce(operator.add, matrices)
+            # probability_matrix /= probability_matrix.max()
             return probability_matrix
         else:
             # empty

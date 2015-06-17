@@ -37,4 +37,6 @@ def combine_probability_matrices(matrices):
     """given a sequence of probability matrices, combine them into a
     single matrix and return it"""
 
-    return functools.reduce(operator.mul, matrices)
+    distribution = functools.reduce(operator.mul, matrices)
+    # normalize distribution
+    return distribution / distribution.max()

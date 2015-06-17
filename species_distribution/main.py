@@ -1,9 +1,10 @@
 """ Main module for running species_distribution """
 
-# import concurrent.futures
 from enum import Enum
 import logging
+import os
 
+import settings
 import species_distribution.exceptions as exceptions
 import species_distribution.io as io
 from species_distribution.models.db import session
@@ -33,20 +34,27 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
     logger.info("working on taxon {}".format(taxon.taxonkey))
     try:
 
-        matrices = (f(taxon) for f in (
+        matrices = [f(taxon) for f in (
             filters.polygon.Filter.filter,
             filters.fao.Filter.filter,
             filters.latitude.Filter.filter,
             filters.depth.Filter.filter,
             filters.habitat.Filter.filter,
             # filters.submergence.Filter.filter,
-        ))
+        )]
 
         distribution_matrix = utils.combine_probability_matrices(matrices)
 
         water_percentage = Grid().get_grid('PWater') / 100
         distribution_matrix *= water_percentage
 
+        if settings.DEBUG:
+            for i, m in enumerate(matrices):
+                fname = '{}-{}'.format(taxon.taxonkey, i)
+                io.save_image(m, fname)
+
+            fname = taxon.taxonkey
+            io.save_image(distribution_matrix, fname)
         return distribution_matrix
 
     except exceptions.InvalidTaxonException as e:

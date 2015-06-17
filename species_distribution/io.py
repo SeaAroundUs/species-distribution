@@ -77,12 +77,11 @@ def save_database(distribution, taxonkey):
         cursor = raw_conn.cursor()
         cursor.execute("DELETE FROM taxon_distribution WHERE taxonkey = %s", (taxonkey, ))
 
-        r = distribution.ravel()
-        indexes = np.where(~np.isnan(r))[0]
-        scaled_distribution = (r * 1000000000).astype(int)
+        ravel = distribution.ravel()
+        indexes = np.where(~np.isnan(ravel))[0]
 
         def records():
-            for seq, value in zip(indexes + 1, scaled_distribution[indexes]):
+            for seq, value in zip(indexes + 1, ravel[indexes]):
                 yield '{}\t{}\t{}\n'.format(taxonkey, seq, value)
 
         f = IteratorFile(records())

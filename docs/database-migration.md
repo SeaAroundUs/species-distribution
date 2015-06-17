@@ -66,6 +66,16 @@ CREATE MATERIALIZED VIEW distribution_cells AS (select ST_MULTI(ST_COLLECTIONEXT
 delete from grid g where seq IN (select g.seq from grid g JOIN world w ON (g.seq = w."Seq") where "PWater" = 0);
 
 
-CREATE TABLE taxon_distribution(id SERIAL PRIMARY KEY, taxonkey INT, cellid INT, relativeabundance INT);
+CREATE TABLE taxon_distribution(id SERIAL PRIMARY KEY, taxonkey INT, cellid INT, relativeabundance FLOAT);
 CREATE INDEX taxon_distribution_taxonkey_idx ON taxon_distribution(taxonkey);
 ALTER TABLE taxon_distribution ADD CONSTRAINT taxonkey_cellid_key UNIQUE(taxonkey, cellid);
+
+CREATE VIEW v_taxon_distribution AS (
+ SELECT a.id,
+    a.taxonkey,
+    a.relativeabundance,
+    g.seq,
+    g.geom
+   FROM grid g
+     JOIN taxon_distribution a ON g.seq = a.cellid
+);
