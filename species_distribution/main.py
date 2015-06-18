@@ -120,3 +120,4 @@ def main(args):
     io.close()
     logger.info('distribution complete')
     logger.debug('grid cache usage: {}'.format(grid.get_grid.cache_info()))
+    logger.debug('filter cache usage: {}'.format(filters.filter.BaseFilter.depth_probability.cache_info()))

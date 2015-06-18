@@ -3,6 +3,7 @@ import logging
 import os
 
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageOps
 
@@ -31,7 +32,7 @@ def save_image(array, name, enhance=False):
     png = os.path.join(settings.PNG_DIR, str(name) + '.png')
     logger.debug('writing {}'.format(png))
 
-    array *= 255 / array.max()
+    array = plt.cm.jet(array)*255
     array = array.astype(np.uint8)
     image = Image.fromarray(array)
     if enhance:
@@ -109,7 +110,6 @@ def save_hdf5(distribution, taxon, force=False):
         key,
         data=distribution,
         compression='gzip',
-        shuffle=True,  # shuffle chunks to help gzip
         fletcher32=True  # checksum
     )
 

@@ -52,7 +52,7 @@ class Filter(BaseFilter):
             # {'habitat_attr': 'Inshore', 'world_attr': 'Inshore'},
             # {'habitat_attr': 'Offshore', 'world_attr': 'Offshore'},
 
-            {'habitat_attr': 'Others', 'world_attr': 'Area'}, # taxaDistribution.vb:2438
+            # {'habitat_attr': 'Others', 'world_attr': 'Area'}, # taxaDistribution.vb:2438
             {'habitat_attr': 'Coral', 'world_attr': 'Coral'},
             {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary'},
             {'habitat_attr': 'Seamount', 'world_attr': 'Seamount'},
@@ -108,7 +108,7 @@ class Filter(BaseFilter):
 
         # combine and normalize:
         if len(matrices) > 0:
-            probability_matrix = functools.reduce(operator.add, matrices)
+            probability_matrix = functools.reduce(operator.mul, matrices)
             # probability_matrix /= probability_matrix.max()
             return probability_matrix
         else:

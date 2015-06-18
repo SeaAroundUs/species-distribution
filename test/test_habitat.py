@@ -29,7 +29,7 @@ class TestHabitat(unittest2.TestCase):
 
         filter = filters.habitat.Filter()
 
-        key = 100025
+        key = 690690
         taxon = session().query(Taxon).filter_by(taxonkey=key).one()
 
         probability_distribution = filter.filter(taxon)

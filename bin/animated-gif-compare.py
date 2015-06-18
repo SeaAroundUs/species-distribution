@@ -37,7 +37,7 @@ with open('gifs/index.html', 'w') as index:
     index.write('<html><body>')
     for taxon in taxa:
         gif_name = 'gifs/' + str(taxon) + '.gif'
-        index.write('<img title="{}" style="float: left;" src="{}"><br />'.format(str(taxon), str(taxon) + '.gif'))
+        index.write('<div style="float:left;"><span>{}</span><img title="{}" src="{}" /></div>'.format(str(taxon), str(taxon), str(taxon) + '.gif'))
 
         if os.path.isfile(gif_name):
             print("{} exists, skipping".format(gif_name))

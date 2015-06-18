@@ -43,4 +43,5 @@ class Filter(BaseFilter):
         indexes = list(zip(*cells))
         probability_matrix[indexes[0], indexes[1]] = 1.0
 
+        taxon.polygon_matrix = probability_matrix
         return probability_matrix

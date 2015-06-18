@@ -45,5 +45,5 @@ class TestUtils(unittest2.TestCase):
 
         result = utils.combine_probability_matrices((m1, m2))
 
-        self.assertAlmostEqual(result[0, 0], 1)
+        self.assertEqual(result[0, 0], 1)
         self.assertFalse(result[0, 1])
