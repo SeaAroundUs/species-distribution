@@ -21,9 +21,7 @@ class Filter(BaseFilter):
         mindepth = -taxon.mindepth
         maxdepth = -taxon.maxdepth
 
-        # get polygon distribution to reduce work done here
-        polygon_distribution = taxon.polygon_matrix  # or PolygonFilter.filter(taxon)
-        mask = (world_depth > mindepth) | (world_depth >= 0) | polygon_distribution.mask
+        mask = (world_depth > mindepth) | (world_depth >= 0)
 
         probability_matrix = self.get_probability_matrix()
 

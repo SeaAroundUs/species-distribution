@@ -11,6 +11,15 @@ class BaseFilter():
     """ subclasses of Filter should define a _filter method
     which will be called by filter
     """
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """ singleton """
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self):
         self.grid = Grid()
         self.logger = logging.getLogger(__name__)
@@ -33,7 +42,7 @@ class BaseFilter():
 
         return probability
 
-    @functools.lru_cache(maxsize=2**32)
+    @functools.lru_cache(maxsize=2**20)
     def depth_probability(self, seafloor_depth, taxon_mindepth, taxon_maxdepth):
         """
         calculates probability of taxon in seafloor_depth of water based on a
@@ -70,4 +79,5 @@ class BaseFilter():
 
         probability = np.trapz(y, x) / triangle_area
 
-        return probability
+        # floating point error is pushing result ever so slightly above 1, clip it
+        return np.clip(probability, 0, 1)

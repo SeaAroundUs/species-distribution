@@ -50,7 +50,7 @@ def create_taxon_distribution(taxon, season=Season.ANNUAL):
             filters.latitude.Filter.filter,
             filters.depth.Filter.filter,
             filters.habitat.Filter.filter,
-            # filters.submergence.Filter.filter,
+            filters.submergence.Filter.filter,
         )]
 
         distribution_matrix = utils.combine_probability_matrices(matrices)
