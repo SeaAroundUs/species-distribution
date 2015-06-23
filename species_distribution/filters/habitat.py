@@ -32,15 +32,34 @@ class MembershipFunction():
         return np.interp(value, self.break_points, y_coords)
 
 
+def conical_frustrum_kernel(r1, r2):
+    """returns a square numpy array of side r1*2+1 containing a centered 0.0-1.0 density
+    map of a conical frustrum with inner (smaller) radius r2 and outer (larger) radius r1"""
+
+    xx, yy = np.mgrid[-r1:r1 + 1, -r1:r1 + 1]
+    cone = (xx ** 2 + yy ** 2)
+    kernel = np.ma.MaskedArray(data=cone, dtype=np.float)
+    # mask values outside r1
+    kernel.mask = cone > (r1 ** 2)
+
+    # set values < r2 to maximum normalized output
+    r2_mask = (cone <= (r2 ** 2))
+    kernel[r2_mask] = r2 ** 2
+    # normalize and invert
+    kernel = (kernel - r2 ** 2) / kernel.max()
+    kernel = 1 - kernel
+    return kernel
+
+
 class Filter(BaseFilter):
 
     def versatility(self, taxon):
         """ membership function for versatility.  14-4.pdf pp. 32 """
-        versatility_function = MembershipFunction((.25, .5, .5, .75))
+        return MembershipFunction((.25, .5, .5, .75))
 
     def maximum_length(self, taxon):
         """ membership function for maximum length.  14-4.pdf pp. 32 """
-        maximum_length_function = MembershipFunction((25, 50, 100, 150))
+        return MembershipFunction((25, 50, 100, 150))
 
     def _filter(self, taxon):
 
@@ -52,7 +71,7 @@ class Filter(BaseFilter):
             # {'habitat_attr': 'Inshore', 'world_attr': 'Inshore'},
             # {'habitat_attr': 'Offshore', 'world_attr': 'Offshore'},
 
-            {'habitat_attr': 'Others', 'world_attr': 'Area'}, # taxaDistribution.vb:2438
+            {'habitat_attr': 'Others', 'world_attr': 'Area'},
             {'habitat_attr': 'Coral', 'world_attr': 'Coral'},
             {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary'},
             # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass'},
