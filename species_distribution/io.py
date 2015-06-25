@@ -55,8 +55,8 @@ def create_output_file():
 
         distribution_file['latitude'] = np.arange(89.75, -90, -.5)
         distribution_file['longitude'] = np.arange(-179.75, 180, .5)
-        distribution_file['latitude'].attrs['units'] = 'degrees_north' # use CF conventions
-        distribution_file['longitude'].attrs['units'] = 'degrees_east' # use CF conventions
+        distribution_file['latitude'].attrs['units'] = 'degrees_north'  # use CF conventions
+        distribution_file['longitude'].attrs['units'] = 'degrees_east'  # use CF conventions
         distribution_file['latitude'].attrs['crs'] = 'WGS84'
 
         # It would be awesome if this hdf5 would be georeferenced by GDAL,

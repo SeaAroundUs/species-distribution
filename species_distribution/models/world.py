@@ -3,6 +3,7 @@
 import functools
 
 import numpy as np
+from pyproj import Geod
 from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
 
@@ -22,8 +23,8 @@ class GridPoint(SpecDisModel):
 class Grid():
 
     _instance = None
-    _lon = None
-    _lat = None
+    longitude = None
+    latitude = None
 
     def __new__(cls, *args, **kwargs):
         """ singleton """
@@ -35,19 +36,35 @@ class Grid():
 
         self.shape = (360, 720)
 
-        if self._lon is None:
-            self._lon = self.get_grid(field='Lon')
+        if self.longitude is None:
+            self.longitude = self.get_grid(field='Lon')
 
-        if self._lat is None:
-            self._lat = self.get_grid(field='Lat')
+        if self.latitude is None:
+            self.latitude = self.get_grid(field='Lat')
 
-        assert(self.shape == self._lon.shape)
+        assert(self.shape == self.longitude.shape)
 
     def index_to_seq(self, index):
         """ given an (x,y) index to the grid, return seq number """
         y, x = index
         h, w = self.shape
         return (x + w * y) + 1
+
+    @property
+    @functools.lru_cache()
+    def cell_height(self):
+        cell_height = np.full(self.shape, np.nan)
+        geod = Geod(ellps='WGS84')
+        for i in range(self.shape[0]):
+            _az12, _az21, cell_length = geod.inv(
+                self.longitude[i, 0],
+                self.latitude[i, 0] + .25,
+                self.longitude[i, 0],
+                self.latitude[i, 0] - .25,
+            )
+            cell_height[i, :] = cell_length
+
+        return cell_height
 
     @property
     @functools.lru_cache(maxsize=2**32)

@@ -26,7 +26,7 @@ class Filter(BaseFilter):
 
         # get a 1-d longitudinal distribution for each regime
 
-        latitudes = self.grid._lat[:, 0]
+        latitudes = self.grid.latitude[:, 0]
 
         if equator_in_middle_third:
             # polygon distribution

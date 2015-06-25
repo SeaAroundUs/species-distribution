@@ -44,8 +44,8 @@ class Filter(BaseFilter):
                 # if mask[i, j]:
                 #     continue
 
-                submergence_min_depth = p_high(self.grid._lat[i, 0])
-                submergence_max_depth = p_low(self.grid._lat[i, 0])
+                submergence_min_depth = p_high(self.grid.latitude[i, 0])
+                submergence_max_depth = p_low(self.grid.latitude[i, 0])
 
                 seafloor_depth = world_depth[i, j]
 
