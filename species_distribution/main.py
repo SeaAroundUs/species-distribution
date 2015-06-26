@@ -41,6 +41,10 @@ class Season(Enum):
 def create_taxon_distribution(taxon, season=Season.ANNUAL):
     """returns a distribution matrix for given taxon taxon by applying filters"""
 
+    if type(taxon) in (str, int):
+        sesh = session()
+        taxon = sesh.query(Taxon).filter(Taxon.taxonkey == taxon).first()
+
     logger.info("working on taxon {}".format(taxon.taxonkey))
     try:
 

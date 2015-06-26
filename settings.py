@@ -12,3 +12,8 @@ DB = {
     'port': '5432',
     'db': 'specdis',
 }
+
+try:
+    from local_settings import *
+except ImportError:
+    print('define local_settings.py to override settings')
