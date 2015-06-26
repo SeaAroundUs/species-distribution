@@ -32,7 +32,7 @@ def save_image(array, name, enhance=False):
     png = os.path.join(settings.PNG_DIR, str(name) + '.png')
     logger.debug('writing {}'.format(png))
 
-    array = plt.cm.jet(array)*255
+    array = plt.cm.jet(array) * 255
     array = array.astype(np.uint8)
     image = Image.fromarray(array)
     if enhance:
