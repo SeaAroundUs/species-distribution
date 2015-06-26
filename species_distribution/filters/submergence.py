@@ -1,10 +1,17 @@
+import math
+
 import numpy as np
+
 from .filter import BaseFilter
 
 
 class Filter(BaseFilter):
     """ Submergence Filter
     """
+
+    def _geometric_mean(x, y):
+
+        return 10 ** ((math.log(x, 10) + math.log(y, 10)) / 2)
 
     def _filter(self, taxon):
 
