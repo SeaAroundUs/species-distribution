@@ -33,6 +33,7 @@ class MembershipFunction():
         return np.interp(value, self.break_points, y_coords)
 
 
+@functools.lru_cache(maxsize=10 ** 3)
 def conical_frustum_kernel(r1, r2):
     """returns a square numpy array of side r1*2+1 containing a centered 0.0-1.0 density
     map of a conical frustum with inner (smaller) radius r2 and outer (larger) radius r1"""
@@ -97,7 +98,7 @@ class Filter(BaseFilter):
         sh = shape[0], a.shape[0] // shape[0], shape[1], a.shape[1] // shape[1]
         return a.reshape(sh).mean(-1).mean(1)
 
-    def calculate_matrix(self, habitat_grid, effective_distance):
+    def calculate_matrix(self, taxon, habitat_grid, effective_distance):
         """given a habitat_grid containing global habitat fractions
         and an effective_distance in km, returns a distribution matrix
         for that habitat
@@ -106,49 +107,53 @@ class Filter(BaseFilter):
         so the conical frustum kernel can be applied to each cell
         """
 
-        # bump up resolution
+        grid = Grid()
+        total_area = grid.get_grid('TArea') * 10 ** 6  # meters**2
+        matrix = self.get_probability_matrix()
+
+        # bump up resolution by this factor for calculations
         resolution_scale = 10
 
-        grid = Grid()
-
-        # total_area = grid.get_grid('TArea')
-
-        # Estimate the distance been centroid and cell boundary
-        # D = np.sqrt(total_area) / 2
-
-        matrix = self.get_probability_matrix()
         new_size = np.multiply(matrix.shape, resolution_scale)
         high_resolution_matrix = np.ma.resize(matrix, new_size)
-        radii = resolution_scale * np.sqrt(habitat_grid / np.pi)
+
+        habitat_radius_m = np.sqrt(habitat_grid * total_area / np.pi)
+        cell_length_m = np.sqrt(total_area / np.pi)
 
         for i, j in np.ndindex(matrix.shape):
-            if not habitat_grid[i, j] > 0:
+            if (not habitat_grid[i, j] > 0) \
+            or (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
                 continue
 
-            if i < 10 or j < 10 or i > 340 or j > 700:
+            edge_padding = 20
+            if i < edge_padding \
+                or j < edge_padding \
+                or i > (matrix.shape[0] - edge_padding) \
+                    or j > (matrix.shape[1] - edge_padding):
+
                 continue
-            # r1 and r2 are in units of (higher resolution) grid cells
 
-            # only handle centered square kernels now.
-            # At high latitudes, this simplification won't be valid.
-            # FIXME: using longitudinal length for cell size estimate for now.
-            cell_length = grid.cell_height[i, j]
+            try:
+                # r1 and r2 are in units of (higher resolution) grid cells
 
-            # Radius of the circular habitat
-            r2 = radii[i, j]
-            # radius of the effective distance from the edge of the habitat
-            r1 = resolution_scale * math.ceil((r2 + effective_distance * 1000) / cell_length)
+                # only handle centered square kernels now.
+                # At high latitudes, this simplification won't be valid.
+                # assuming square for now.
+                cell_length = cell_length_m[i, j]
 
-            kernel = conical_frustum_kernel(r1, r2)
+                # Radius of the circular habitat
+                r2 = math.ceil(resolution_scale * habitat_radius_m[i, j] / cell_length)
+                # radius of the effective distance from the edge of the habitat
+                r1 = math.ceil(r2 + resolution_scale * effective_distance * 1000 / cell_length)
 
-            # merge the kernel into to the high resolution matrix
-            ii = i * resolution_scale + kernel.shape[0] // 2
-            jj = j * resolution_scale + kernel.shape[1] // 2
+                kernel = conical_frustum_kernel(r1, r2)
+                # merge the kernel into to the high resolution matrix
+                ii = i * resolution_scale + kernel.shape[0] // 2
+                jj = j * resolution_scale + kernel.shape[1] // 2
+                apply_kernel_greater_than(high_resolution_matrix, ii, jj, kernel)
 
-            apply_kernel_greater_than(high_resolution_matrix, ii, jj, kernel)
-            # alpha = (1 - d1 / habitat.EffectiveD).clip(0, 1)
-            # habitat_effect = weight * alpha * (habitat_grid / total_area)
-            # ma = np.ma.MaskedArray(data=habitat_effect, mask=(land_mask))
+            except ValueError as e:
+                self.logger.info('skipping cell [{}, {}] due to value error: {}'.format(i,j,str(e)))
 
         # downscale high resolution matrix
         matrix = self._rebin(high_resolution_matrix, matrix.shape)
@@ -164,20 +169,19 @@ class Filter(BaseFilter):
             # {'habitat_attr': 'Inshore', 'world_attr': 'Inshore'},
             # {'habitat_attr': 'Offshore', 'world_attr': 'Offshore'},
 
-            # {'habitat_attr': 'Others', 'world_attr': 'Area'},
+            {'habitat_attr': 'Others', 'world_attr': 'Area'},
             {'habitat_attr': 'Coral', 'world_attr': 'Coral'},
-            # {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary'},
+            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary'},
             # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass'},
-            # {'habitat_attr': 'Seamount', 'world_attr': 'Seamount'},
-            # {'habitat_attr': 'Shelf', 'world_attr': 'Shelf'},
-            # {'habitat_attr': 'Slope', 'world_attr': 'Slope'},
-            # {'habitat_attr': 'Abyssal', 'world_attr': 'Abyssal'},
+            {'habitat_attr': 'Seamount', 'world_attr': 'Seamount'},
+            {'habitat_attr': 'Shelf', 'world_attr': 'Shelf'},
+            {'habitat_attr': 'Slope', 'world_attr': 'Slope'},
+            {'habitat_attr': 'Abyssal', 'world_attr': 'Abyssal'},
         ]
 
         probability_matrix = self.get_probability_matrix()
 
         grid = Grid()
-        # land_mask = grid.get_grid('PWater') == 0
 
         matrices = []
 
@@ -189,9 +193,9 @@ class Filter(BaseFilter):
                 continue
 
             habitat_grid = grid.get_grid(hab['world_attr'])
-
-            matrix = self.calculate_matrix(habitat_grid, taxon_habitat.EffectiveD)
-
+            matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.EffectiveD)
+            matrix *= weight
+            matrix *= habitat_grid
             matrices.append(matrix)
 
         # combine and normalize:
