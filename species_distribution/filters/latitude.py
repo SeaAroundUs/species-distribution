@@ -38,7 +38,7 @@ class Filter(BaseFilter):
             y_points = (0, 1, 0)
 
         distribution1d = np.interp(latitudes, x_points, y_points)
-        mask = distribution1d[distribution1d <= 0]
+        mask = distribution1d <= 0
         distribution1d = np.ma.MaskedArray(data=distribution1d)
         distribution1d.mask = mask
 
