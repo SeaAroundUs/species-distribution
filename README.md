@@ -53,7 +53,10 @@ io.save_png(distribution)
 # Cells can be georeferenced with species_distribution.models.world.Grid
 
 </pre>
-### Tools
+## Tools
+
+### species-distribution
+
 <pre>
 usage: species-distribution [-h] [-f] [-t TAXON] [-l LIMIT] [-c THREADS] [-v]
 
