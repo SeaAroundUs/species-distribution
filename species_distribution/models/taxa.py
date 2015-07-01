@@ -4,9 +4,32 @@ from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
 
 from .db import SpecDisModel, engine, Base
+from species_distribution import exceptions
 
 
 FAO_IDS = (18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
+
+
+def polygon_cells_for_taxon(taxon_key):
+
+    query = """
+    WITH dis AS (
+        SELECT ST_SIMPLIFY(geom,.10) as geom FROM distribution
+        WHERE taxon=%s
+    )
+    SELECT g.row-1, g.col-1
+        FROM grid g
+         JOIN dis d ON (1=1)
+        WHERE ST_INTERSECTS(g.geom, d.geom)
+
+    """
+
+    with engine.connect() as conn:
+        result = conn.execute(query, taxon_key)
+        data = result.fetchall()
+        if len(data) == 0:
+            raise exceptions.NoPolygonException
+        return data
 
 
 class Taxon(SpecDisModel):

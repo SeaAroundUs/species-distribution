@@ -121,8 +121,9 @@ class Filter(BaseFilter):
         cell_length_m = np.sqrt(total_area / np.pi)
 
         for i, j in np.ndindex(matrix.shape):
-            if (not habitat_grid[i, j] > 0) \
-            or (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
+            if (not habitat_grid[i, j] > 0):
+                continue
+            if hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]:
                 continue
 
             edge_padding = 20
@@ -166,8 +167,8 @@ class Filter(BaseFilter):
         # sesh.close()
 
         habitats = [
-            # {'habitat_attr': 'Inshore', 'world_attr': 'Inshore'},
-            # {'habitat_attr': 'Offshore', 'world_attr': 'Offshore'},
+            {'habitat_attr': 'Inshore', 'world_attr': 'area_coast'},
+            {'habitat_attr': 'Offshore', 'world_attr': 'area_offshore'},
 
             {'habitat_attr': 'Others', 'world_attr': 'Area'},
             {'habitat_attr': 'Coral', 'world_attr': 'Coral'},

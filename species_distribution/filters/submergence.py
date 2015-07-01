@@ -1,14 +1,19 @@
 import math
+import sys
 
 import numpy as np
 
 from .filter import BaseFilter
+import settings
 
 
 class Filter(BaseFilter):
     """ Submergence Filter
 
-    Documentation from email with Deng Palomares <m.palomares@fisheries.ubc.ca>
+    Primary documentation source:
+    http://www.seaaroundus.org/catch-reconstruction-and-allocation-methods/#_Toc421534359
+
+    Additional documentation from email with Deng Palomares <m.palomares@fisheries.ubc.ca>
     June 24, 2015:
 
 
@@ -78,9 +83,63 @@ class Filter(BaseFilter):
     """
 
     def _geometric_mean(self, a):
-
-        sum_of_logs = sum([math.log(x, 10) for x in a])
+        """ a should be a sequence of numbers greater than 0 """
+        try:
+            sum_of_logs = sum((math.log(x, 10) for x in a))
+        except ValueError:
+            self.logger.critical('unable to take log of negative number in {}'.format(str(a)))
+            raise
         return 10 ** (sum_of_logs / len(a))
+
+    def fit_parabolas(self, min_depth, max_depth, lat_north, lat_south):
+        """ returns a tuple of two functions (upper, lower) which are fitted
+        polynomials representing the upper and lower parabolas defined by the
+        submergence model
+        """
+
+        # geometric mean requires values > 0, so the data is ever so slightly tweaked to handle
+        # depth values of 0
+        if min_depth == 0:
+            min_depth += sys.float_info.epsilon
+        mean_depth = -self._geometric_mean((abs(min_depth), abs(max_depth)))
+
+        # depending on relationship of latnorth/latsouth and the equator, define different upper
+        # and lower parabolas according to business rules.  The 3 points defining each parabola are
+        # defined by each branch then modeled as p_high (upper parabola) and p_low (lower parabola)
+
+        if lat_north > 0 and lat_north < 60 and lat_south < 0 and lat_south > -60:
+            # latitude range spans equator, and within 60/-60
+            # section c)
+            x_high = (60, lat_north, -60)
+            y_high = (0, min_depth, 0)
+
+            x_low = (60, 0, -60)
+            y_low = (mean_depth, max_depth, mean_depth)
+
+        elif (lat_north > 0 and lat_north <= 60) or (lat_south <= 0 and lat_south >= -60):
+            # latitude range is in one hemisphere, and within 60/-60
+            x_high = [60, lat_north, -60]
+            y_high = [0, min_depth, 0]
+
+            x_low = [60, lat_south, -60]
+            y_low = [mean_depth, max_depth, mean_depth]
+
+        elif lat_north > 60 or lat_south < -60:
+            # section d) of documentation
+
+            x_high = [lat_north, 60, -60]
+            y_high = [0, min_depth, min_depth]
+
+            x_low = [lat_south, 60, -60]
+            y_low = [max_depth, mean_depth, mean_depth]
+
+        else:
+            raise Exception('no submergence rules for lat_north: {} lat_south: {}'.format(lat_north, lat_south))
+
+        p_high = np.poly1d(np.polyfit(x_high, y_high, 2))
+        p_low = np.poly1d(np.polyfit(x_low, y_low, 2))
+
+        return p_high, p_low
 
     def _filter(self, taxon):
 
@@ -88,73 +147,42 @@ class Filter(BaseFilter):
         # world goes from surface at EleMax: 0 to EleMin: -N at depth
         # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
-        world_depth = self.grid.get_grid('EleMin')
+        # world_min_depth = self.grid.get_grid('EleMax')
+        world_max_depth = self.grid.get_grid('EleMin')
 
         min_depth = -taxon.mindepth
         max_depth = -taxon.maxdepth
 
-        # get polygon distribution to reduce work done here
-        # polygon_distribution = taxon.polygon_matrix  # or PolygonFilter.filter(taxon)
-        # mask = (world_depth > min_depth)
-
         probability_matrix = self.get_probability_matrix()
 
-        # define upper and lower parabolas as defined in section 6 of catch reconstruction
-        # document http://www.seaaroundus.org/catch-reconstruction-and-allocation-methods/#_Toc421534359
+        p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.latnorth, taxon.latsouth)
 
-        mean_depth = -self._geometric_mean((taxon.mindepth, taxon.maxdepth))
+        if settings.DEBUG:
+            import matplotlib.pyplot as plt
+            import os
+            x = np.arange(60,-60,-.1)
+            plt.plot(x, p_high(x))
+            plt.plot(x, p_low(x))
+            plt.axhline(min_depth)
+            plt.axhline(max_depth)
+            plt.axvline(taxon.latnorth)
+            plt.axvline(taxon.latsouth)
+            plt.savefig(os.path.join(settings.PNG_DIR, '{}-submergence-parabolas.png'.format(taxon.taxonkey)))
 
-        # depending on relationship of latnorth/latsouth and the equator, define different upper
-        # and lower parabolas according to business rules.  The 3 points defining each parabola are
-        # defined by each branch then modeled as p_high (upper parabola) and p_low (lower parabola)
-
-        if (taxon.latnorth - taxon.latsouth) > 0 and taxon.latnorth <= 60 and taxon.latsouth >= -60:
-            # latitude range is in one hemisphere, and within 60/-60
-            # section b) of documentation
-
-            x_high = (60, taxon.latnorth, -60)
-            y_high = (0, min_depth, 0)
-
-            x_low = (60, taxon.latsouth, -60)
-            y_low = (mean_depth, max_depth, mean_depth)
-
-        elif taxon.latnorth > 0 and taxon.latnorth < 60 and taxon.latsouth < 0 and taxon.latsouth > -60:
-            # latitude range spans equator, and within 60/-60
-            # section c) of documentation
-
-            x_high = [60, taxon.latnorth, -60]
-            y_high = [0, mean_depth, 0]
-
-            x_low = [60, 0, -60]
-            y_low = [mean_depth, max_depth, mean_depth]
-
-        elif taxon.latnorth > 60 or taxon.latsouth < -60:
-            # section d) of documentation
-
-            x_high = [taxon.latnorth, 60, -60]
-            y_high = [0, min_depth, min_depth]
-
-            x_low = [taxon.latsouth, 60, -60]
-            y_low = [max_depth, mean_depth, mean_depth]
-
-        else:
-            raise Exception('no submergence rules for latnorth: {} latsouth: {}'.format(taxon.latnorth, taxon.latsouth))
-
-        p_high = np.poly1d(np.polyfit(x_high, y_high, 2))
-        p_low = np.poly1d(np.polyfit(x_low, y_low, 2))
+        # submergence is constant poleward of 60/-60/latnorth/latsouth
+        latitudes = np.clip(self.grid.latitude[:, 0], min(taxon.latsouth, -60), max(60, taxon.latnorth))
 
         for i, j in np.ndindex(probability_matrix.shape):
+            if (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
+                continue
 
-            # submergence is constant poleward of 60/-60
-            latitude = np.clip(self.grid.latitude[i, 0], -60, 60)
+            latitude = latitudes[i]
 
             submergence_min_depth = p_high(latitude)
             submergence_max_depth = p_low(latitude)
 
-            seafloor_depth = world_depth[i, j]
-
-            if seafloor_depth < submergence_min_depth:
-                probability = self.depth_probability(seafloor_depth, submergence_min_depth, submergence_max_depth)
+            if world_max_depth[i, j] < submergence_min_depth:
+                probability = self.depth_probability(world_max_depth[i, j], submergence_min_depth, submergence_max_depth)
                 probability_matrix[i, j] = probability
 
         return probability_matrix

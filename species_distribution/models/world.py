@@ -93,13 +93,18 @@ class Grid():
     def get_grid(self, field='SST'):
         """returns a spatial 2D numpy array of the field specified"""
 
-        attr = getattr(GridPoint, field)
+        if hasattr(self, field):
+            # Grid.field exists as a property
+            return getattr(self, field)
+        else:
+            # need to get query the world table
+            attr = getattr(GridPoint, field)
 
-        query = session() \
-            .query(GridPoint) \
-            .order_by('Row', 'Col') \
-            .values(attr)
+            query = session() \
+                .query(GridPoint) \
+                .order_by('Row', 'Col') \
+                .values(attr)
 
-        grid_points = (r[0] for r in query)
+            grid_points = (r[0] for r in query)
 
-        return self.rows_to_grid(grid_points, dtype=attr.type.python_type)
+            return self.rows_to_grid(grid_points, dtype=attr.type.python_type)
