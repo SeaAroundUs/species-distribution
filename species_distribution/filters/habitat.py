@@ -75,8 +75,6 @@ def apply_kernel_greater_than(a, i, j, kernel):
 
     a[_slice][~mask] = kernel[~mask]
     a.mask[_slice][~mask] = False
-    # a[_slice][~mask] = kernel[~mask]
-
     return a
 
 
@@ -118,7 +116,7 @@ class Filter(BaseFilter):
         high_resolution_matrix = np.ma.resize(matrix, new_size)
 
         habitat_radius_m = np.sqrt(habitat_grid * total_area / np.pi)
-        cell_length_m = np.sqrt(total_area / np.pi)
+        cell_length_m = np.sqrt(total_area)
 
         for i, j in np.ndindex(matrix.shape):
             if (not habitat_grid[i, j] > 0):
@@ -135,17 +133,17 @@ class Filter(BaseFilter):
                 continue
 
             try:
-                # r1 and r2 are in units of (higher resolution) grid cells
 
                 # only handle centered square kernels now.
                 # At high latitudes, this simplification won't be valid.
                 # assuming square for now.
                 cell_length = cell_length_m[i, j]
 
+                # r1 and r2 are in units of (higher resolution) grid cells
                 # Radius of the circular habitat
                 r2 = math.ceil(resolution_scale * habitat_radius_m[i, j] / cell_length)
                 # radius of the effective distance from the edge of the habitat
-                r1 = math.ceil(r2 + resolution_scale * effective_distance * 1000 / cell_length)
+                r1 = math.ceil(r2 + resolution_scale * effective_distance / cell_length)
 
                 kernel = conical_frustum_kernel(r1, r2)
                 # merge the kernel into to the high resolution matrix
@@ -167,17 +165,16 @@ class Filter(BaseFilter):
         # sesh.close()
 
         habitats = [
-            {'habitat_attr': 'Inshore', 'world_attr': 'area_coast'},
-            {'habitat_attr': 'Offshore', 'world_attr': 'area_offshore'},
-
-            {'habitat_attr': 'Others', 'world_attr': 'Area'},
-            {'habitat_attr': 'Coral', 'world_attr': 'Coral'},
-            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary'},
-            # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass'},
-            {'habitat_attr': 'Seamount', 'world_attr': 'Seamount'},
-            {'habitat_attr': 'Shelf', 'world_attr': 'Shelf'},
-            {'habitat_attr': 'Slope', 'world_attr': 'Slope'},
-            {'habitat_attr': 'Abyssal', 'world_attr': 'Abyssal'},
+            {'habitat_attr': 'Inshore', 'world_attr': 'area_coast', 'dist_independant': False},
+            {'habitat_attr': 'Offshore', 'world_attr': 'area_offshore', 'dist_independant': False},
+            {'habitat_attr': 'Others', 'world_attr': 'water_area', 'dist_independant': False},
+            {'habitat_attr': 'Coral', 'world_attr': 'Coral', 'dist_independant': True},
+            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary', 'dist_independant': False},
+            # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass', 'dist_independant': True},
+            {'habitat_attr': 'Seamount', 'world_attr': 'Seamount', 'dist_independant': False},
+            {'habitat_attr': 'Shelf', 'world_attr': 'Shelf', 'dist_independant': False},
+            {'habitat_attr': 'Slope', 'world_attr': 'Slope', 'dist_independant': False},
+            {'habitat_attr': 'Abyssal', 'world_attr': 'Abyssal', 'dist_independant': False},
         ]
 
         probability_matrix = self.get_probability_matrix()
@@ -185,6 +182,7 @@ class Filter(BaseFilter):
         grid = Grid()
 
         matrices = []
+        dist_independant_matrices = []
 
         for hab in habitats:
 
@@ -202,11 +200,28 @@ class Filter(BaseFilter):
             matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.EffectiveD)
             matrix *= weight
             matrix *= habitat_grid
-            matrices.append(matrix)
+            if hab['dist_independant']:
+                dist_independant_matrices.append(matrix)
+            else:
+                matrices.append(matrix)
 
         # combine and normalize:
         if len(matrices) > 0:
             probability_matrix = functools.reduce(operator.add, matrices)
+
+            # filter out inshore/offshore
+            coastal_prop = grid.get_grid('CoastalProp')
+            if taxon_habitat.Inshore == 0:
+                mask = coastal_prop == 1
+                probability_matrix.mask = mask
+
+            if taxon_habitat.Offshore == 0:
+                mask = coastal_prop == 0
+                probability_matrix.mask = mask
+
+            for matrix in dist_independant_matrices:
+                probability_matrix *= matrix
+
             probability_matrix /= probability_matrix.max()
             return probability_matrix
         else:

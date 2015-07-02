@@ -81,6 +81,12 @@ class Grid():
         return (1 - coastal_prop) * water_area
 
     @property
+    @functools.lru_cache(maxsize=2**32)
+    def water_area(self):
+        percent_water = self.get_grid('PWater')
+        return percent_water / 100
+
+    @property
     def field_names(self):
         return (c.name for c in GridPoint.__table__.columns)
 

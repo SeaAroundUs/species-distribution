@@ -141,6 +141,20 @@ class Filter(BaseFilter):
 
         return p_high, p_low
 
+    def _plot_parabolas(self, p_high, p_low, min_depth, max_depth, lat_north, lat_south, taxon_key):
+        """ writes out a PNG plot of the calculated parabolas and the parameters used
+        to generate them"""
+        import matplotlib.pyplot as plt
+        import os
+        x = np.arange(60,-60,-.1)
+        plt.plot(x, p_high(x))
+        plt.plot(x, p_low(x))
+        plt.axhline(min_depth)
+        plt.axhline(max_depth)
+        plt.axvline(lat_north)
+        plt.axvline(lat_south)
+        plt.savefig(os.path.join(settings.PNG_DIR, '{}-submergence-parabolas.png'.format(taxon_key)))
+
     def _filter(self, taxon):
 
         # min and max are inverted between taxon and world
@@ -158,16 +172,7 @@ class Filter(BaseFilter):
         p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.latnorth, taxon.latsouth)
 
         if settings.DEBUG:
-            import matplotlib.pyplot as plt
-            import os
-            x = np.arange(60,-60,-.1)
-            plt.plot(x, p_high(x))
-            plt.plot(x, p_low(x))
-            plt.axhline(min_depth)
-            plt.axhline(max_depth)
-            plt.axvline(taxon.latnorth)
-            plt.axvline(taxon.latsouth)
-            plt.savefig(os.path.join(settings.PNG_DIR, '{}-submergence-parabolas.png'.format(taxon.taxonkey)))
+            self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.latnorth, taxon.latsouth, taxon.taxonkey)
 
         # submergence is constant poleward of 60/-60/latnorth/latsouth
         latitudes = np.clip(self.grid.latitude[:, 0], min(taxon.latsouth, -60), max(60, taxon.latnorth))
