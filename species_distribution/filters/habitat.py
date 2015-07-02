@@ -152,7 +152,7 @@ class Filter(BaseFilter):
                 apply_kernel_greater_than(high_resolution_matrix, ii, jj, kernel)
 
             except ValueError as e:
-                self.logger.info('skipping cell [{}, {}] due to value error: {}'.format(i, j, str(e)))
+                self.logger.info('skipping cell [{}, {}]. r1: {} r2: {}  value error: {}'.format(i, j, r1, r2, str(e)))
 
         # downscale high resolution matrix
         matrix = self._rebin(high_resolution_matrix, matrix.shape)
@@ -192,7 +192,7 @@ class Filter(BaseFilter):
                 continue
 
             habitat_grid = grid.get_grid(hab['world_attr'])
-            if hab['world_attr'] == 'Area':
+            if hab['world_attr'] in ('area_offshore', 'area_coast', 'water_area', 'Shelf', 'Slope', 'Abyssal'):
                 # Area is in km2, convert to percentage
                 total_area = grid.get_grid('TArea')
                 habitat_grid = habitat_grid / total_area

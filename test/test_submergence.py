@@ -15,4 +15,4 @@ class TestHabitat(unittest2.TestCase):
         upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
         self.assertAlmostEqual(lower_f(0), max_depth)
         self.assertAlmostEqual(upper_f(lat_north), min_depth)
-        self.assertAlmostEqual(upper_f(5), -3.2, places=1)
+        self.assertAlmostEqual(upper_f(5), -1.02, places=1)
