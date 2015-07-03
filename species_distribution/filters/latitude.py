@@ -5,7 +5,7 @@ from species_distribution.filters.filter import BaseFilter
 
 class Filter(BaseFilter):
 
-    def _filter(self, taxon):
+    def _filter(self, taxon=None, session=None):
         """ probability generated according to taxon.latnorth and taxon.latsouth
 
         Divides the range into thirds.
@@ -20,13 +20,11 @@ class Filter(BaseFilter):
 
         taxon_range = taxon.latnorth - taxon.latsouth
         taxon_mean = (taxon.latnorth + taxon.latsouth) / 2
+
         middle_third_north = taxon.latnorth - (taxon_range / 3)
         middle_third_south = taxon.latnorth - (2 * taxon_range / 3)
+
         equator_in_middle_third = middle_third_north > 0 and middle_third_south < 0
-
-        # get a 1-d longitudinal distribution for each regime
-
-        latitudes = self.grid.latitude[:, 0]
 
         if equator_in_middle_third:
             # polygon distribution
@@ -37,6 +35,8 @@ class Filter(BaseFilter):
             x_points = (taxon.latsouth, taxon_mean, taxon.latnorth)
             y_points = (0, 1, 0)
 
+        # get a 1-d longitudinal distribution for each regime
+        latitudes = self.grid.latitude[:, 0]
         distribution1d = np.interp(latitudes, x_points, y_points)
         mask = distribution1d <= 0
         distribution1d = np.ma.MaskedArray(data=distribution1d)

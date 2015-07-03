@@ -5,6 +5,8 @@ import numpy as np
 
 from .filter import BaseFilter
 import settings
+from species_distribution.models.db import Session
+from species_distribution.models.taxa import Taxon
 
 
 class Filter(BaseFilter):
@@ -155,7 +157,7 @@ class Filter(BaseFilter):
         plt.axvline(lat_south)
         plt.savefig(os.path.join(settings.PNG_DIR, '{}-submergence-parabolas.png'.format(taxon_key)))
 
-    def _filter(self, taxon):
+    def _filter(self, taxon=None, session=None):
 
         # min and max are inverted between taxon and world
         # world goes from surface at EleMax: 0 to EleMin: -N at depth

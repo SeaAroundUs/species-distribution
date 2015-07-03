@@ -4,17 +4,28 @@ import logging
 
 import numpy as np
 
+from species_distribution.models.db import Session
+from species_distribution.models.taxa import Taxon
 from species_distribution.models.world import Grid
+from settings import NUMPY_WARNINGS
 
 
 class BaseFilter():
     """ subclasses of Filter should define a _filter method
-    which will be called by filter
+    which will be called by filter.  It should accept two keyword
+    arguments:
+
+    _filter(taxon=None, session=None)
+
+    taxon should be a taxon ID which will be converted to a Taxon object
+    and the SQLAlchemy session will be passed in by filter
     """
 
     def __init__(self):
         self.grid = Grid()
         self.logger = logging.getLogger(__name__)
+        np.seterrcall(self.logger.warn)
+        np.seterr(all=NUMPY_WARNINGS)
 
     def get_probability_matrix(self):
         return np.ma.MaskedArray(data=np.full(self.grid.shape, np.nan, dtype=float), mask=True)
@@ -23,7 +34,11 @@ class BaseFilter():
     def filter(cls, *args, **kwargs):
         instance = cls()
         instance.logger.debug('applying {}'.format(cls.__module__))
-        probability = instance._filter(*args, **kwargs)
+        with Session() as session:
+            taxon = session.query(Taxon).get(kwargs['taxon'])
+            kwargs['session'] = session
+            kwargs['taxon'] = taxon
+            probability = instance._filter(*args, **kwargs)
 
         max = probability.max()
         assert(

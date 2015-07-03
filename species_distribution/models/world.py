@@ -7,7 +7,7 @@ from pyproj import Geod
 from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
 
-from .db import engine, session, SpecDisModel, Base
+from .db import engine, Session, SpecDisModel, Base
 
 
 class GridPoint(SpecDisModel):
@@ -105,12 +105,12 @@ class Grid():
         else:
             # need to get query the world table
             attr = getattr(GridPoint, field)
+            with Session() as session:
+                query = session \
+                    .query(GridPoint) \
+                    .order_by('Row', 'Col') \
+                    .values(attr)
 
-            query = session() \
-                .query(GridPoint) \
-                .order_by('Row', 'Col') \
-                .values(attr)
-
-            grid_points = (r[0] for r in query)
+                grid_points = (r[0] for r in query)
 
             return self.rows_to_grid(grid_points, dtype=attr.type.python_type)

@@ -2,9 +2,8 @@ import unittest2
 
 import numpy as np
 
-from species_distribution.models.db import session
+from species_distribution.models.db import Session
 import species_distribution.filters as filters
-from species_distribution.models.taxa import Taxon
 
 
 class TestHabitat(unittest2.TestCase):
@@ -30,9 +29,7 @@ class TestHabitat(unittest2.TestCase):
     def test_filter(self):
 
         key = 690690
-        taxon = session().query(Taxon).filter_by(taxonkey=key).one()
-
-        distribution = filters.habitat.Filter.filter(taxon)
+        distribution = filters.habitat.Filter.filter(taxon=key)
         self.assertEqual(distribution.shape, (360, 720))
 
     def test_frustum_kernel(self):

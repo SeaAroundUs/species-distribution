@@ -2,6 +2,9 @@
 
 DEBUG = True
 
+NUMPY_WARNINGS = 'warn'  # ‘ignore’, ‘warn’, ‘raise’, ‘call’, ‘print’, ‘log’}
+# NUMPY_WARNINGS = 'call'  # ‘ignore’, ‘warn’, ‘raise’, ‘call’, ‘print’, ‘log’}
+
 DISTRIBUTION_FILE = 'species-distribution.hdf5'
 PNG_DIR = 'png'
 

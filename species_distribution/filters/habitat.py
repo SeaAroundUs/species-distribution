@@ -5,8 +5,7 @@ import operator
 import numpy as np
 
 from species_distribution.filters.filter import BaseFilter
-from species_distribution.models.db import session
-from species_distribution.models.taxa import TaxonHabitat
+from species_distribution.models.taxa import Taxon, TaxonHabitat
 from species_distribution.models.world import Grid
 
 
@@ -71,8 +70,7 @@ def apply_kernel_greater_than(a, i, j, kernel):
 
     # mask out values which are already higher than kernel would provide,
     # or are masked in the kernel
-    mask = (kernel < a.data[_slice]) | kernel.mask
-
+    mask = (kernel < a[_slice]) | kernel.mask
     a[_slice][~mask] = kernel[~mask]
     a.mask[_slice][~mask] = False
     return a
@@ -158,11 +156,7 @@ class Filter(BaseFilter):
         matrix = self._rebin(high_resolution_matrix, matrix.shape)
         return matrix
 
-    def _filter(self, taxon):
-
-        sesh = session()
-        taxon_habitat = sesh.query(TaxonHabitat).filter_by(TaxonKey=taxon.taxonkey).one()
-        # sesh.close()
+    def _filter(self, taxon=None, session=None):
 
         habitats = [
             {'habitat_attr': 'Inshore', 'world_attr': 'area_coast', 'dist_independant': False},
@@ -183,6 +177,8 @@ class Filter(BaseFilter):
 
         matrices = []
         dist_independant_matrices = []
+
+        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxonkey)
 
         for hab in habitats:
 

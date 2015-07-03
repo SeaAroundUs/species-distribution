@@ -1,4 +1,5 @@
 import numpy as np
+
 from .filter import BaseFilter
 
 
@@ -10,16 +11,16 @@ class Filter(BaseFilter):
     proportional to the amount falling within the scalene triangle
     distribution """
 
-    def _filter(self, taxon):
+    def _filter(self, taxon=None, session=None):
+
+        mindepth = -taxon.mindepth
+        maxdepth = -taxon.maxdepth
 
         # min and max are inverted between taxon and world
         # world goes from surface at EleMax: 0 to EleMin: -N at depth
         # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
         world_depth = self.grid.get_grid('EleAvg')
-
-        mindepth = -taxon.mindepth
-        maxdepth = -taxon.maxdepth
 
         mask = (world_depth > mindepth) | (world_depth >= 0)
 
