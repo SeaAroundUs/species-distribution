@@ -79,6 +79,13 @@ def create_taxon_distribution(taxonkey, season=Season.ANNUAL):
         logger.warn("No polygon exists for taxon {}".format(taxonkey))
 
 
+def create_and_save_taxon(taxonkey, force=False):
+
+    distribution = create_taxon_distribution(taxonkey)
+    io.save_database(distribution, taxonkey)
+    io.save_hdf5(distribution, taxonkey, force=force)
+    logger.info('taxon {} complete'.format(taxonkey))
+
 def main(args):
     configure_logging(args.verbose and logging.DEBUG or logging.INFO)
     logger.info("starting distribution")
@@ -107,16 +114,7 @@ def main(args):
                 logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxon.taxonkey))
                 continue
 
-            distribution = create_taxon_distribution(taxon.taxonkey, {'season': Season.ANNUAL})
-
-            if distribution is None:
-                logger.debug('empty distribution returned')
-                continue
-
-            io.save_database(distribution, taxon.taxonkey)
-            io.save_hdf5(distribution, taxon, force=args.force)
-
-            logger.info('taxon {} complete'.format(taxon.taxonkey))
+            create_and_save_taxon(taxon.taxonkey, force=args.force)
 
     io.close()
     logger.info('distribution complete')

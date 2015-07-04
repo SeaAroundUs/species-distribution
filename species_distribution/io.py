@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageOps
 
-from .models.db import engine
+from .models.db import engine, Session
+from .models.taxa import Taxon
+
 from .exceptions import ExistingRecordException
 from .utils import IteratorFile
 import settings
@@ -83,37 +85,41 @@ def get_distribution_file():
     return _distribution_file
 
 
-def save_hdf5(distribution, taxon, force=False):
-    distribution[distribution.mask] = np.nan
+def save_hdf5(distribution, taxonkey, force=False):
 
-    distribution_file = get_distribution_file()
+    with Session() as session:
 
-    key = 'taxa/' + str(taxon.taxonkey)
+        taxon = session.query(Taxon).get(taxonkey)
+        distribution[distribution.mask] = np.nan
 
-    if key in completed_taxon():
-        if not force:
-            raise ExistingRecordException("{} exists, and not using the force".format(key))
-        else:
-            del distribution_file[key]
+        distribution_file = get_distribution_file()
 
-    dataset = distribution_file.create_dataset(
-        key,
-        data=distribution,
-        compression='gzip',
-        fletcher32=True  # checksum
-    )
+        key = 'taxa/' + str(taxon.taxonkey)
 
-    dataset.attrs['long_name'] = '{} - {}, {}'.format(taxon.taxonkey, taxon.commonname, taxon.taxonname)
-    dataset.attrs['name'] = taxon.taxonkey
-    dataset.dims.create_scale(distribution_file['latitude'], 'latitude')
-    dataset.dims.create_scale(distribution_file['longitude'], 'longitude')
-    dataset.attrs['units'] = 'relative_abundance'
-    dataset.attrs['grid_mapping'] = 'crs'
+        if key in completed_taxon():
+            if not force:
+                raise ExistingRecordException("{} exists, and not using the force".format(key))
+            else:
+                del distribution_file[key]
 
-    dataset.dims[0].attach_scale(distribution_file['latitude'])
-    dataset.dims[0].label = 'latitude'
-    dataset.dims[1].attach_scale(distribution_file['longitude'])
-    dataset.dims[1].label = 'longitude'
+        dataset = distribution_file.create_dataset(
+            key,
+            data=distribution,
+            compression='gzip',
+            fletcher32=True  # checksum
+        )
+
+        dataset.attrs['long_name'] = '{} - {}, {}'.format(taxon.taxonkey, taxon.commonname, taxon.taxonname)
+        dataset.attrs['name'] = taxon.taxonkey
+        dataset.dims.create_scale(distribution_file['latitude'], 'latitude')
+        dataset.dims.create_scale(distribution_file['longitude'], 'longitude')
+        dataset.attrs['units'] = 'relative_abundance'
+        dataset.attrs['grid_mapping'] = 'crs'
+
+        dataset.dims[0].attach_scale(distribution_file['latitude'])
+        dataset.dims[0].label = 'latitude'
+        dataset.dims[1].attach_scale(distribution_file['longitude'])
+        dataset.dims[1].label = 'longitude'
 
 
 @h5py_dataset_to_numpy
