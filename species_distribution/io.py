@@ -129,7 +129,7 @@ def save_database(distribution, taxonkey):
         cursor.execute("DELETE FROM taxon_distribution WHERE taxonkey = %s", (taxonkey, ))
 
         ravel = distribution.ravel()
-        indexes = np.where(~np.isnan(ravel))[0]
+        indexes = np.where(~(np.isnan(ravel) | ravel.mask))[0]
 
         def records():
             for seq, value in zip(indexes + 1, ravel[indexes]):
@@ -140,19 +140,12 @@ def save_database(distribution, taxonkey):
         raw_conn.commit()
 
 
-def save(distribution, taxon):
-    """ creates products for distribution and taxon """
-
-    save_database(distribution, taxon.taxonkey)
-    save_hdf5(distribution, taxon)
-    save_image(array=distribution, name=taxon.taxonkey)
-
-
 def close():
 
     global _distribution_file
     if _distribution_file:
         _distribution_file.close()
+
 
 @functools.lru_cache(maxsize=2**32)
 def completed_taxon():

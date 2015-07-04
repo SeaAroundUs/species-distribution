@@ -113,6 +113,7 @@ def main(args):
                 logger.debug('empty distribution returned')
                 continue
 
+            io.save_database(distribution, taxon.taxonkey)
             io.save_hdf5(distribution, taxon, force=args.force)
 
             logger.info('taxon {} complete'.format(taxon.taxonkey))

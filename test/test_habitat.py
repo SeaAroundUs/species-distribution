@@ -2,7 +2,6 @@ import unittest2
 
 import numpy as np
 
-from species_distribution.models.db import Session
 import species_distribution.filters as filters
 
 

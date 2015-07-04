@@ -3,9 +3,7 @@
 import argparse
 import logging
 
-import settings
 from species_distribution import io
-
 
 logging.basicConfig(level=logging.INFO)
 
