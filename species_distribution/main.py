@@ -3,6 +3,7 @@
 from enum import Enum
 import logging
 import signal
+import sys
 
 import settings
 import species_distribution.exceptions as exceptions
@@ -26,7 +27,11 @@ logger = logging.getLogger(__name__)
 
 def signal_handler(*args):
     global STOP
-    logger.warning("SIGINT caught, raising STOP flag")
+    if STOP:
+        logger.warning("SIGINT caught twice, exiting immediately")
+        sys.exit(-1)
+
+    logger.warning("Will exit after handling this taxon. Repeat to exit immediately.")
     STOP = True
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -75,7 +80,6 @@ def create_taxon_distribution(taxonkey, season=Season.ANNUAL):
 
 
 def main(args):
-
     configure_logging(args.verbose and logging.DEBUG or logging.INFO)
     logger.info("starting distribution")
 
@@ -96,7 +100,7 @@ def main(args):
         for taxon in taxa:
 
             if STOP:
-                logger.critical("STOP raised")
+                logger.critical("Quitting early due to SIGINT")
                 break
 
             if not args.force and '/taxa/' + str(taxon.taxonkey) in io.completed_taxon():

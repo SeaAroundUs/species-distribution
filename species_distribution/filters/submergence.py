@@ -126,17 +126,25 @@ class Filter(BaseFilter):
             x_low = [60, lat_south, -60]
             y_low = [mean_depth, max_depth, mean_depth]
 
-        elif lat_north > 60 or lat_south < -60:
+        else:  # if lat_north > 60 or lat_south < -60:
             # section d) of documentation
 
-            x_high = [lat_north, 60, -60]
-            y_high = [0, min_depth, min_depth]
+            if lat_south <= -60 or lat_north >= 60:
+                # TODO: had to handle this case outside of the business rules
+                # since they produce an inverted parabola
+                # find out the appropriate action.
+                x_high = [lat_north, 60, -60]
+                y_high = [0, min_depth, min_depth]
 
-            x_low = [lat_south, 60, -60]
-            y_low = [max_depth, mean_depth, mean_depth]
+                x_low = [60, 0, -60]
+                y_low = [mean_depth, max_depth, mean_depth]
 
-        else:
-            raise Exception('no submergence rules for lat_north: {} lat_south: {}'.format(lat_north, lat_south))
+            else:
+                x_high = [lat_north, 60, -60]
+                y_high = [0, min_depth, min_depth]
+
+                x_low = [lat_south, 60, -60]
+                y_low = [max_depth, mean_depth, mean_depth]
 
         p_high = np.poly1d(np.polyfit(x_high, y_high, 2))
         p_low = np.poly1d(np.polyfit(x_low, y_low, 2))
@@ -149,12 +157,17 @@ class Filter(BaseFilter):
         import matplotlib.pyplot as plt
         import os
         x = np.arange(60,-60,-.1)
+        plt.cla()  # clear preexisting plots
         plt.plot(x, p_high(x))
         plt.plot(x, p_low(x))
         plt.axhline(min_depth)
         plt.axhline(max_depth)
         plt.axvline(lat_north)
         plt.axvline(lat_south)
+
+        if not os.path.isdir(settings.PNG_DIR):
+            os.makedirs(settings.PNG_DIR)
+
         plt.savefig(os.path.join(settings.PNG_DIR, '{}-submergence-parabolas.png'.format(taxon_key)))
 
     def _filter(self, taxon=None, session=None):
@@ -176,8 +189,8 @@ class Filter(BaseFilter):
         if settings.DEBUG:
             self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.latnorth, taxon.latsouth, taxon.taxonkey)
 
-        # submergence is constant poleward of 60/-60/latnorth/latsouth
-        latitudes = np.clip(self.grid.latitude[:, 0], min(taxon.latsouth, -60), max(60, taxon.latnorth))
+        # submergence is constant poleward of 60/-60
+        latitudes = np.clip(self.grid.latitude[:, 0], -60, 60)
 
         for i, j in np.ndindex(probability_matrix.shape):
             if (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
