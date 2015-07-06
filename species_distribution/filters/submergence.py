@@ -118,7 +118,7 @@ class Filter(BaseFilter):
             x_low = (60, 0, -60)
             y_low = (mean_depth, max_depth, mean_depth)
 
-        elif (lat_north > 0 and lat_north <= 60) or (lat_south <= 0 and lat_south >= -60):
+        elif (lat_north > 0 and lat_south > 0 and lat_north <= 60) or (lat_south <= 0 and lat_north <= 0 and lat_south >= -60):
             # latitude range is in one hemisphere, and within 60/-60
             x_high = [60, lat_north, -60]
             y_high = [0, min_depth, 0]
