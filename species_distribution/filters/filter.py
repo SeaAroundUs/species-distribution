@@ -36,7 +36,11 @@ class BaseFilter():
         instance.logger.debug('applying {}'.format(cls.__module__))
         with Session() as session:
             taxon = session.query(Taxon).get(kwargs['taxon'])
+
+            # pass in the session so the filter can
+            # query the DB if necessary
             kwargs['session'] = session
+
             kwargs['taxon'] = taxon
             probability = instance._filter(*args, **kwargs)
 

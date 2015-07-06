@@ -1,1 +1,1 @@
-from .main import create_taxon_distribution
+from .distribution import create_taxon_distribution

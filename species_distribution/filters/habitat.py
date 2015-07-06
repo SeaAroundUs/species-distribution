@@ -5,6 +5,7 @@ import operator
 import numpy as np
 
 from species_distribution.filters.filter import BaseFilter
+from species_distribution.filters.polygon import Filter as PolygonFilter
 from species_distribution.models.taxa import Taxon, TaxonHabitat
 from species_distribution.models.world import Grid
 
@@ -94,7 +95,7 @@ class Filter(BaseFilter):
         sh = shape[0], a.shape[0] // shape[0], shape[1], a.shape[1] // shape[1]
         return a.reshape(sh).mean(-1).mean(1)
 
-    def calculate_matrix(self, taxon, habitat_grid, effective_distance):
+    def calculate_matrix(self, taxon, habitat_grid, effective_distance, session=None):
         """given a habitat_grid containing global habitat fractions
         and an effective_distance in km, returns a distribution matrix
         for that habitat
@@ -116,10 +117,13 @@ class Filter(BaseFilter):
         habitat_radius_m = np.sqrt(habitat_grid * total_area / np.pi)
         cell_length_m = np.sqrt(total_area)
 
+        # use polygon matrix to reduce the number of cells to calculate
+        polygon_matrix = PolygonFilter()._filter(taxon=taxon, session=session)
+
         for i, j in np.ndindex(matrix.shape):
             if (not habitat_grid[i, j] > 0):
                 continue
-            if hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]:
+            if polygon_matrix.mask[i, j]:
                 continue
 
             edge_padding = 20
@@ -156,6 +160,28 @@ class Filter(BaseFilter):
         matrix = self._rebin(high_resolution_matrix, matrix.shape)
         return matrix
 
+    def combine_matrices(self, matrices, dist_independent_matrices, taxon_habitat):
+        """combine matrices and normalize"""
+
+        grid = Grid()
+
+        # filter out inshore/offshore
+        distance_independent_probability_matrix = functools.reduce(operator.add, dist_independent_matrices)
+        coastal_prop = grid.get_grid('CoastalProp')
+        if taxon_habitat.Inshore == 0:
+            mask = coastal_prop == 1
+            # if a cell has a value set by a distance independent filter already, don't mask it,
+            # else mask it
+            distance_independent_probability_matrix.mask = distance_independent_probability_matrix.mask & mask
+
+        if taxon_habitat.Offshore == 0:
+            mask = coastal_prop == 0
+            distance_independent_probability_matrix.mask = distance_independent_probability_matrix.mask & mask
+
+        probability_matrix = functools.reduce(operator.add, matrices + distance_independent_probability_matrix)
+        probability_matrix /= probability_matrix.max()
+        return probability_matrix
+
     def _filter(self, taxon=None, session=None):
 
         habitats = [
@@ -176,7 +202,7 @@ class Filter(BaseFilter):
         grid = Grid()
 
         matrices = []
-        dist_independant_matrices = []
+        dist_independent_matrices = []
 
         taxon_habitat = session.query(TaxonHabitat).get(taxon.taxonkey)
 
@@ -193,32 +219,16 @@ class Filter(BaseFilter):
                 total_area = grid.get_grid('TArea')
                 habitat_grid = habitat_grid / total_area
 
-            matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.EffectiveD)
+            matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.EffectiveD, session=session)
             matrix *= weight
             matrix *= habitat_grid
             if hab['dist_independant']:
-                dist_independant_matrices.append(matrix)
+                dist_independent_matrices.append(matrix)
             else:
                 matrices.append(matrix)
 
-        # combine and normalize:
         if len(matrices) > 0:
-            probability_matrix = functools.reduce(operator.add, matrices)
-
-            # filter out inshore/offshore
-            coastal_prop = grid.get_grid('CoastalProp')
-            if taxon_habitat.Inshore == 0:
-                mask = coastal_prop == 1
-                probability_matrix.mask = mask
-
-            if taxon_habitat.Offshore == 0:
-                mask = coastal_prop == 0
-                probability_matrix.mask = mask
-
-            for matrix in dist_independant_matrices:
-                probability_matrix *= matrix
-
-            probability_matrix /= probability_matrix.max()
+            probability_matrix = self.combine_matrices(matrices, dist_independent_matrices, taxon_habitat)
             return probability_matrix
         else:
             # empty
