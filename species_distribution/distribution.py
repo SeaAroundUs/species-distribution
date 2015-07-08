@@ -15,7 +15,6 @@ def create_taxon_distribution(taxonkey):
     logger.info("working on taxon {}".format(taxonkey))
 
     try:
-
         matrices = [f(taxon=taxonkey) for f in (
             filters.polygon.Filter.filter,
             filters.fao.Filter.filter,
@@ -24,6 +23,9 @@ def create_taxon_distribution(taxonkey):
             filters.habitat.Filter.filter,
             filters.submergence.Filter.filter,
         )]
+
+        # remove empty matrices
+        matrices = tuple(filter(None.__ne__, matrices))
 
         distribution_matrix = utils.combine_probability_matrices(matrices)
 

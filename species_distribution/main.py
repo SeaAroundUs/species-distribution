@@ -5,7 +5,6 @@ from multiprocessing import Pool
 import signal
 import sys
 
-
 import species_distribution.distribution as distribution
 import species_distribution.io as io
 from species_distribution.models.db import Session
@@ -36,16 +35,16 @@ def signal_handler(*args):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-def main(args):
-    configure_logging(args.verbose and logging.DEBUG or logging.INFO)
+def main(arguments):
+    configure_logging(arguments.verbose and logging.DEBUG or logging.INFO)
     logger.info("starting distribution")
 
     with Session() as session:
         # get taxa
-        if args.limit:
-            taxa = session.query(Taxon).all()[0:args.limit]
-        elif args.taxon:
-            taxa = session.query(Taxon).filter(Taxon.taxonkey.in_(args.taxon)).all()
+        if arguments.limit:
+            taxa = session.query(Taxon).all()[0:arguments.limit]
+        elif arguments.taxon:
+            taxa = session.query(Taxon).filter(Taxon.taxonkey.in_(arguments.taxon)).all()
         else:
             # only select taxa which have a polygon (distribtution table, modelled "TaxaDistribution")
             taxa = session.query(Taxon) \
@@ -56,7 +55,7 @@ def main(args):
 
         taxonkeys = [t.taxonkey for t in taxa]
 
-    with Pool(processes=4) as pool:
+    with Pool(processes=arguments.processes) as pool:
         res = []
         for taxonkey in taxonkeys:
 
@@ -64,11 +63,17 @@ def main(args):
                 logger.critical("Quitting early due to SIGINT")
                 break
 
-            if not args.force and '/taxa/' + str(taxonkey) in io.completed_taxon():
+            if not arguments.force and '/taxa/' + str(taxonkey) in io.completed_taxon():
                 logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxonkey))
                 continue
 
-            res.append(pool.apply_async(distribution.create_and_save_taxon, (taxonkey,), dict(force=args.force)))
+            function = distribution.create_and_save_taxon
+            args = (taxonkey,)
+            kwargs = dict(force=arguments.force)
+            if arguments.processes > 1:
+                res.append(pool.apply_async(function, args, kwargs))
+            else:
+                function(*args, **kwargs)
 
         for r in res:
             r.wait()

@@ -202,7 +202,7 @@ class Filter(BaseFilter):
         grid = Grid()
 
         matrices = []
-        dist_independent_matrices = []
+        dist_independent_matrices = [self.get_probability_matrix()]  # seed it with an empty one in case no others exist
 
         taxon_habitat = session.query(TaxonHabitat).get(taxon.taxonkey)
 

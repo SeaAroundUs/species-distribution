@@ -5,8 +5,6 @@ import numpy as np
 
 from .filter import BaseFilter
 import settings
-from species_distribution.models.db import Session
-from species_distribution.models.taxa import Taxon
 
 
 class Filter(BaseFilter):
@@ -24,7 +22,7 @@ class Filter(BaseFilter):
     correlated with depth (shaves off cells which fall outside of the
     established depth gradients)
 
-    Depth gradients are defined usi ng a parabolic function of the form: y = ax2
+    Depth gradients are defined using a parabolic function of the form: y = ax2
     + bx + c, where Y is depth and X is latitude
 
     Two parabolas are needed, one defines the shallow depth gradient and the
@@ -170,39 +168,63 @@ class Filter(BaseFilter):
 
         plt.savefig(os.path.join(settings.PNG_DIR, '{}-submergence-parabolas.png'.format(taxon_key)))
 
+    def _grid_parabola(self, f):
+        """ given a function f which defines a fitted parabola,
+        return a Grid shaped array with that parabola applied
+        to 60/-60, and constant across longitudes """
+        # submergence is constant poleward of 60/-60
+        latitudes = np.clip(self.grid.latitude[:, 0], -60, 60)
+        y = f(latitudes)
+
+        matrix = self.get_probability_matrix()
+        # broadcast 1-D array across longitudes:
+        matrix[:] = y.reshape(y.shape[0], 1)   # pivot
+        return matrix
+
     def _filter(self, taxon=None, session=None):
+
+        if taxon.intertidal:
+            self.logger.debug('Skipping submergence filter for intertidal taxon {}'.format(taxon.taxonkey))
+            return
 
         # min and max are inverted between taxon and world
         # world goes from surface at EleMax: 0 to EleMin: -N at depth
         # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
         # world_min_depth = self.grid.get_grid('EleMax')
-        world_max_depth = self.grid.get_grid('EleMin')
+        ocean_depth = self.grid.get_grid('EleAvg')
+        percent_water = self.grid.get_grid('PWater')
 
         min_depth = -taxon.mindepth
         max_depth = -taxon.maxdepth
-
-        probability_matrix = self.get_probability_matrix()
 
         p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.latnorth, taxon.latsouth)
 
         if settings.DEBUG:
             self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.latnorth, taxon.latsouth, taxon.taxonkey)
 
-        # submergence is constant poleward of 60/-60
-        latitudes = np.clip(self.grid.latitude[:, 0], -60, 60)
+        p_high_array = self._grid_parabola(p_high)
+        p_low_array = self._grid_parabola(p_low)
 
-        for i, j in np.ndindex(probability_matrix.shape):
-            if (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
-                continue
+        # define a mask with which to set cell values at 1 (or default to masked)
+        # based on submergence rules
+        mask = (
+            ((percent_water < 100) & (ocean_depth < p_high_array))
+            |
+            ((ocean_depth <= p_high_array) & (ocean_depth >= p_low_array))
+        )
+        probability_matrix = self.get_probability_matrix()
+        probability_matrix[mask] = 1
+        # for i, j in np.ndindex(probability_matrix.shape):
+        #     if (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
+        #         continue
 
-            latitude = latitudes[i]
+        #     submergence_min_depth = p_high_array[i]
+        #     submergence_max_depth = p_low_array[i]
 
-            submergence_min_depth = p_high(latitude)
-            submergence_max_depth = p_low(latitude)
-
-            if world_max_depth[i, j] < submergence_min_depth:
-                probability = self.depth_probability(world_max_depth[i, j], submergence_min_depth, submergence_max_depth)
-                probability_matrix[i, j] = probability
+        #     if percent_water[i, j] < 100:
+        #         if ocean_depth[i, j]
+        #     if ocean_depth[i, j] < submergence_min_depth:
+        #         probability_matrix[i, j] = 1
 
         return probability_matrix

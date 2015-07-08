@@ -1,6 +1,7 @@
 import numpy as np
 
 from .filter import BaseFilter
+from species_distribution.models.taxa import TaxonHabitat
 
 
 class Filter(BaseFilter):
@@ -9,9 +10,18 @@ class Filter(BaseFilter):
     probability_matrix values are defined where taxon min and max depth
     fall within the min and max depth of the cell.  Value is
     proportional to the amount falling within the scalene triangle
-    distribution """
+    distribution
+
+    This filter is skipped if the species is coastal (Offshore = 0)
+    """
 
     def _filter(self, taxon=None, session=None):
+
+        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxonkey)
+
+        if taxon_habitat.Offshore == 0:
+            self.logger.debug('skipping depth filter for {} since Offshore==0'.format(taxon.taxonkey))
+            return
 
         mindepth = -taxon.mindepth
         maxdepth = -taxon.maxdepth

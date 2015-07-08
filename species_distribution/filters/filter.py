@@ -44,12 +44,16 @@ class BaseFilter():
             kwargs['taxon'] = taxon
             probability = instance._filter(*args, **kwargs)
 
-        max = probability.max()
-        assert(
-            max is np.ma.masked
-            or
-            (max <= 1 and probability.min() >= 0)
-        )
+        # probability should either be None, all masked, or contain
+        # only values 0->1:
+        if probability is not None:
+            assert(
+                np.ma.all(probability.mask)
+                or
+                np.isnan(probability.max())
+                or
+                (probability.max() <= 1 and probability.min() >= 0)
+            )
 
         return probability
 
