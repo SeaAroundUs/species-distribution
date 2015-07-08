@@ -28,7 +28,8 @@ class BaseFilter():
         np.seterr(all=NUMPY_WARNINGS)
 
     def get_probability_matrix(self):
-        return np.ma.MaskedArray(data=np.full(self.grid.shape, np.nan, dtype=float), mask=True)
+        return np.ma.MaskedArray(data=np.full(self.grid.shape, 0, dtype=float), mask=True)
+        # return np.ma.MaskedArray(data=np.full(self.grid.shape, np.nan, dtype=float), mask=True)
 
     @classmethod
     def filter(cls, *args, **kwargs):
@@ -40,20 +41,19 @@ class BaseFilter():
             # pass in the session so the filter can
             # query the DB if necessary
             kwargs['session'] = session
-
             kwargs['taxon'] = taxon
             probability = instance._filter(*args, **kwargs)
 
-        # probability should either be None, all masked, or contain
+        # probability should either be  all masked or contain
         # only values 0->1:
-        if probability is not None:
-            assert(
-                np.ma.all(probability.mask)
-                or
-                np.isnan(probability.max())
-                or
-                (probability.max() <= 1 and probability.min() >= 0)
-            )
+
+        assert(
+            np.ma.all(probability.mask)
+            or
+            np.isnan(probability.max())
+            or
+            (probability.max() <= 1 and probability.min() >= 0)
+        )
 
         return probability
 
@@ -71,6 +71,12 @@ class BaseFilter():
         taxon_maxdepth of taxon (further from surface, in negative meters)
 
         """
+
+        # short circuit easy answers:
+        if seafloor_depth < taxon_maxdepth:
+            return 1.0
+        if seafloor_depth > taxon_mindepth:
+            return 0.0
 
         # create scalene triangle properties
         one_third_depth = taxon_mindepth - (taxon_mindepth - taxon_maxdepth) / 3

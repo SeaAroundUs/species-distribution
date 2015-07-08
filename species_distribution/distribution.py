@@ -1,12 +1,23 @@
+import functools
 import logging
+import operator
 
 import settings
 import species_distribution.exceptions as exceptions
 import species_distribution.filters as filters
 import species_distribution.io as io
-import species_distribution.utils as utils
+from species_distribution.models.world import Grid
 
 logger = logging.getLogger(__name__)
+
+
+def combine_probability_matrices(matrices):
+    """given a sequence of probability matrices, combine them into a
+    single matrix and return it"""
+
+    distribution = functools.reduce(operator.mul, matrices)
+    # normalize distribution
+    return distribution / distribution.max()
 
 
 def create_taxon_distribution(taxonkey):
@@ -14,31 +25,32 @@ def create_taxon_distribution(taxonkey):
 
     logger.info("working on taxon {}".format(taxonkey))
 
+    _filters = (
+        {'name': 'polygon', 'f': filters.polygon.Filter.filter},
+        {'name': 'fao', 'f': filters.fao.Filter.filter},
+        {'name': 'latitude', 'f': filters.latitude.Filter.filter},
+        {'name': 'depth', 'f': filters.depth.Filter.filter},
+        {'name': 'habitat', 'f': filters.habitat.Filter.filter},
+        {'name': 'submergence', 'f': filters.submergence.Filter.filter},
+    )
+
     try:
-        matrices = [f(taxon=taxonkey) for f in (
-            filters.polygon.Filter.filter,
-            filters.fao.Filter.filter,
-            filters.latitude.Filter.filter,
-            filters.depth.Filter.filter,
-            filters.habitat.Filter.filter,
-            filters.submergence.Filter.filter,
-        )]
+        matrices = [f['f'](taxon=taxonkey) for f in _filters]
 
-        # remove empty matrices
-        matrices = tuple(filter(None.__ne__, matrices))
-
-        distribution_matrix = utils.combine_probability_matrices(matrices)
+        distribution_matrix = combine_probability_matrices(matrices)
 
         # water_percentage = Grid().get_grid('PWater') / 100
         # distribution_matrix *= water_percentage
 
         if settings.DEBUG:
             for i, m in enumerate(matrices):
-                fname = '{}-{}'.format(taxonkey, i)
+                fname = '{}-{}-{}'.format(taxonkey, i, _filters[i]['name'])
                 io.save_image(m, fname)
 
             fname = taxonkey
             io.save_image(distribution_matrix, fname, enhance=False)
+            logger.debug('grid cache usage: {}'.format(Grid().get_grid.cache_info()))
+            logger.debug('filter cache usage: {}'.format(filters.filter.BaseFilter.depth_probability.cache_info()))
         return distribution_matrix
 
     except exceptions.InvalidTaxonException as e:

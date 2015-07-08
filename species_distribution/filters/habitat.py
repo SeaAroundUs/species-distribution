@@ -6,7 +6,7 @@ import numpy as np
 
 from species_distribution.filters.filter import BaseFilter
 from species_distribution.filters.polygon import Filter as PolygonFilter
-from species_distribution.models.taxa import Taxon, TaxonHabitat
+from species_distribution.models.taxa import TaxonHabitat
 from species_distribution.models.world import Grid
 
 
@@ -165,20 +165,30 @@ class Filter(BaseFilter):
 
         grid = Grid()
 
+        probability_matrix = self.get_probability_matrix()
+
         # filter out inshore/offshore
-        distance_independent_probability_matrix = functools.reduce(operator.add, dist_independent_matrices)
+        # distance_independent_probability_matrix = functools.reduce(operator.add, dist_independent_matrices)
+        for matrix in dist_independent_matrices:
+            probability_matrix.mask &= matrix.mask
+            probability_matrix += matrix
+
         coastal_prop = grid.get_grid('CoastalProp')
         if taxon_habitat.Inshore == 0:
             mask = coastal_prop == 1
             # if a cell has a value set by a distance independent filter already, don't mask it,
             # else mask it
-            distance_independent_probability_matrix.mask = distance_independent_probability_matrix.mask & mask
+            probability_matrix.mask &= mask
 
         if taxon_habitat.Offshore == 0:
             mask = coastal_prop == 0
-            distance_independent_probability_matrix.mask = distance_independent_probability_matrix.mask & mask
+            probability_matrix.mask &= mask
 
-        probability_matrix = functools.reduce(operator.add, matrices + distance_independent_probability_matrix)
+        # probability_matrix = functools.reduce(operator.add, matrices + [distance_independent_probability_matrix])
+        for matrix in matrices:
+            probability_matrix.mask &= matrix.mask
+            probability_matrix += matrix
+
         probability_matrix /= probability_matrix.max()
         return probability_matrix
 
@@ -189,7 +199,7 @@ class Filter(BaseFilter):
             {'habitat_attr': 'Offshore', 'world_attr': 'area_offshore', 'dist_independant': False},
             {'habitat_attr': 'Others', 'world_attr': 'water_area', 'dist_independant': False},
             {'habitat_attr': 'Coral', 'world_attr': 'Coral', 'dist_independant': True},
-            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary', 'dist_independant': False},
+            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary', 'dist_independant': True},
             # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass', 'dist_independant': True},
             {'habitat_attr': 'Seamount', 'world_attr': 'Seamount', 'dist_independant': False},
             {'habitat_attr': 'Shelf', 'world_attr': 'Shelf', 'dist_independant': False},
@@ -213,6 +223,8 @@ class Filter(BaseFilter):
             if not weight > 0:
                 continue
 
+            self.logger.debug('habitat: {}'.format(hab['habitat_attr']))
+
             habitat_grid = grid.get_grid(hab['world_attr'])
             if hab['world_attr'] in ('area_offshore', 'area_coast', 'water_area', 'Shelf', 'Slope', 'Abyssal'):
                 # Area is in km2, convert to percentage
@@ -221,7 +233,6 @@ class Filter(BaseFilter):
 
             matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.EffectiveD, session=session)
             matrix *= weight
-            matrix *= habitat_grid
             if hab['dist_independant']:
                 dist_independent_matrices.append(matrix)
             else:

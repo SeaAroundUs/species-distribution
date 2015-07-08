@@ -18,32 +18,33 @@ class Filter(BaseFilter):
     def _filter(self, taxon=None, session=None):
 
         taxon_habitat = session.query(TaxonHabitat).get(taxon.taxonkey)
+        probability_matrix = self.get_probability_matrix()
 
         if taxon_habitat.Offshore == 0:
             self.logger.debug('skipping depth filter for {} since Offshore==0'.format(taxon.taxonkey))
-            return
+            probability_matrix[:] = 1
 
-        mindepth = -taxon.mindepth
-        maxdepth = -taxon.maxdepth
+        else:
 
-        # min and max are inverted between taxon and world
-        # world goes from surface at EleMax: 0 to EleMin: -N at depth
-        # taxon goes from surface mindepth 0 to maxdepth: N at depth
+            mindepth = -taxon.mindepth
+            maxdepth = -taxon.maxdepth
 
-        world_depth = self.grid.get_grid('EleAvg')
+            # min and max are inverted between taxon and world
+            # world goes from surface at EleMax: 0 to EleMin: -N at depth
+            # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
-        mask = (world_depth > mindepth) | (world_depth >= 0)
+            world_depth = self.grid.get_grid('EleAvg')
 
-        probability_matrix = self.get_probability_matrix()
+            mask = world_depth > mindepth
 
-        # iterate over the valid values
-        for i, j in np.ndindex(probability_matrix.shape):
-            if mask[i, j]:
-                continue
+            # iterate over the valid values
+            for i, j in np.ndindex(probability_matrix.shape):
+                if mask[i, j]:
+                    continue
 
-            seafloor_depth = world_depth[i, j]
+                seafloor_depth = world_depth[i, j]
 
-            P = self.depth_probability(seafloor_depth, mindepth, maxdepth)
-            probability_matrix[i, j] = P
+                P = self.depth_probability(seafloor_depth, mindepth, maxdepth)
+                probability_matrix[i, j] = P
 
         return probability_matrix

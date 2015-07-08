@@ -34,16 +34,3 @@ class TestUtils(unittest2.TestCase):
         actual = f.read(2)
         expected = '0'
         self.assertEqual(expected, actual)
-
-    def test_combine_probability_matrices(self):
-        m1 = np.ma.MaskedArray(np.full((2, 2), np.nan), mask=True)
-        m2 = np.ma.MaskedArray(np.full((2, 2), np.nan), mask=True)
-
-        m1[0, 0] = .5
-        m2[0, 0] = .1
-        m2[0, 1] = .1
-
-        result = utils.combine_probability_matrices((m1, m2))
-
-        self.assertEqual(result[0, 0], 1)
-        self.assertFalse(result[0, 1])
