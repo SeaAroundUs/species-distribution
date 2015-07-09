@@ -1,22 +1,45 @@
 # settings for species-distribution
 
-DEBUG = True
+import json
+import os
 
-NUMPY_WARNINGS = 'warn'  # ‘ignore’, ‘warn’, ‘raise’, ‘call’, ‘print’, ‘log’}
-# NUMPY_WARNINGS = 'call'  # ‘ignore’, ‘warn’, ‘raise’, ‘call’, ‘print’, ‘log’}
+user_settings_dir = os.path.join(os.path.expanduser('~'), '.species-distribution')
+user_settings_file = os.path.join(user_settings_dir, 'settings.json')
 
-DISTRIBUTION_FILE = 'species-distribution.hdf5'
-PNG_DIR = 'png'
+settings = {
 
-DB = {
-    'username': 'web',
-    'password': 'web',
-    'host': 'localhost',
-    'port': '5432',
-    'db': 'specdis',
+    'DEBUG': True,
+
+    'NUMPY_WARNINGS': 'warn',
+
+    'DISTRIBUTION_FILE': 'species-distribution.hdf5',
+    'PNG_DIR': 'png',
+
+    'DB': {
+        'username': 'web',
+        'password': 'web',
+        'host': 'localhost',
+        'port': '5432',
+        'db': 'specdis'
+    },
+
+    'USER_SETTINGS_DIR': user_settings_dir,
+    'USER_SETTINGS_FILE': user_settings_file
 }
 
+locals().update(settings)
+
+if not os.path.isdir(user_settings_dir):
+    os.makedirs(user_settings_dir)
+
+if not os.path.isfile(user_settings_file):
+    with open(user_settings_file, 'w') as f:
+        json.dump(settings, f, indent=4)
+
+# override with user settings in ~/.species-distribution/settings.json
 try:
-    from local_settings import *
-except ImportError:
-    print('define local_settings.py to override settings')
+    user_settings = json.load(open(user_settings_file))
+    locals().update(user_settings)
+except:
+    raise Exception('unable to open user settings {}'.format(user_settings_file))
+

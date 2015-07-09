@@ -6,8 +6,15 @@ import settings
 from species_distribution.main import main
 
 
+description = """
+Species Distribution
+
+override any settings in {}
+""".format(settings.USER_SETTINGS_FILE)
+
+
 def parse_args():
-    parser = argparse.ArgumentParser(description='Species Distribution')
+    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-f', '--force', action='store_true', help='overwrite any existing output file: {}'.format(settings.DISTRIBUTION_FILE))
     parser.add_argument('-t', '--taxon', type=int, action='append', help='process this taxon only, can specify multiple -t options')
     parser.add_argument('-l', '--limit', type=int, help='process this many taxa only')
