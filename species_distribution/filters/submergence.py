@@ -127,22 +127,22 @@ class Filter(BaseFilter):
         else:  # if lat_north > 60 or lat_south < -60:
             # section d) of documentation
 
-            if lat_south <= -60 or lat_north >= 60:
+            if lat_north <= 60 and lat_north >= -60 :
                 # TODO: had to handle this case outside of the business rules
                 # since they produce an inverted parabola
                 # find out the appropriate action.
                 x_high = [lat_north, 60, -60]
-                y_high = [0, min_depth, min_depth]
-
-                x_low = [60, 0, -60]
-                y_low = [mean_depth, max_depth, mean_depth]
-
+                y_high = [mean_depth, min_depth, min_depth]
             else:
-                x_high = [lat_north, 60, -60]
-                y_high = [0, min_depth, min_depth]
+                x_high = [0, 60, -60]
+                y_high = [mean_depth, min_depth, min_depth]
 
+            if lat_south <= 60 and lat_south >= -60:
+                x_low = [60, lat_south, -60]
+                y_low = [mean_depth, max_depth, mean_depth]
+            else:
                 x_low = [lat_south, 60, -60]
-                y_low = [max_depth, mean_depth, mean_depth]
+                y_low = [mean_depth, max_depth, max_depth]
 
         p_high = np.poly1d(np.polyfit(x_high, y_high, 2))
         p_low = np.poly1d(np.polyfit(x_low, y_low, 2))
@@ -215,17 +215,5 @@ class Filter(BaseFilter):
         )
         probability_matrix = self.get_probability_matrix()
         probability_matrix[mask] = 1
-
-        # for i, j in np.ndindex(probability_matrix.shape):
-        #     if (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
-        #         continue
-
-        #     submergence_min_depth = p_high_array[i]
-        #     submergence_max_depth = p_low_array[i]
-
-        #     if percent_water[i, j] < 100:
-        #         if ocean_depth[i, j]
-        #     if ocean_depth[i, j] < submergence_min_depth:
-        #         probability_matrix[i, j] = 1
 
         return probability_matrix

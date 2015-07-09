@@ -9,7 +9,6 @@ class TestHabitat(unittest2.TestCase):
         submergence_filter = filters.submergence.Filter()
         min_depth = -1
         max_depth = -10
-        mean_depth = -submergence_filter._geometric_mean((abs(min_depth), abs(max_depth)))
         lat_north = 10
         lat_south = -10
         upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
@@ -28,3 +27,33 @@ class TestHabitat(unittest2.TestCase):
         upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
         self.assertAlmostEqual(lower_f(0), max_depth)
         self.assertLess(mean_depth, upper_f(0))
+
+    def test_400250_parabola_fit(self):
+        # this taxa was producing inverted parabolas
+        submergence_filter = filters.submergence.Filter()
+        min_depth = -200
+        max_depth = -1500
+        lat_north = -23
+        lat_south = -67
+        upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
+        self.assertAlmostEqual(upper_f(0), -607.6, places=1)
+
+    def test_500871_parabola_fit(self):
+        submergence_filter = filters.submergence.Filter()
+        min_depth = -10
+        max_depth = -50
+        mean_depth = -submergence_filter._geometric_mean((abs(min_depth), abs(max_depth)))
+        lat_north = 65
+        lat_south = 14
+        upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
+        self.assertAlmostEqual(upper_f(0), -22.4, places=1)
+
+    def test_690628_parabola_fit(self):
+        # this taxa was producing crossing parabolas.  Still is.
+        submergence_filter = filters.submergence.Filter()
+        min_depth = -69
+        max_depth = -108
+        lat_north = 45
+        lat_south = 20
+        upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
+        self.assertAlmostEqual(upper_f(0), -22.4, places=1)
