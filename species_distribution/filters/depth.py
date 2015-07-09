@@ -1,3 +1,5 @@
+import functools
+
 import numpy as np
 
 from .filter import BaseFilter
@@ -26,25 +28,24 @@ class Filter(BaseFilter):
 
         else:
 
-            mindepth = -taxon.mindepth
-            maxdepth = -taxon.maxdepth
-
             # min and max are inverted between taxon and world
             # world goes from surface at EleMax: 0 to EleMin: -N at depth
             # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
+            mindepth = -taxon.mindepth
+            maxdepth = -taxon.maxdepth
+
             world_depth = self.grid.get_grid('EleAvg')
 
-            mask = world_depth > mindepth
+            deep_mask = world_depth < maxdepth
+            probability_matrix[deep_mask] = 1.0
 
-            # iterate over the valid values
-            for i, j in np.ndindex(probability_matrix.shape):
-                if mask[i, j]:
-                    continue
-
-                seafloor_depth = world_depth[i, j]
-
-                P = self.depth_probability(seafloor_depth, mindepth, maxdepth)
-                probability_matrix[i, j] = P
+            # find world depths in taxon range,
+            # then broadcast results of depth_probability() to probability_matrix
+            depths_in_range = np.arange(mindepth, maxdepth - 1, -1)
+            world_depths_in_range = np.intersect1d(depths_in_range, world_depth)
+            f = functools.partial(self.depth_probability, taxon_mindepth=mindepth, taxon_maxdepth=maxdepth)
+            for depth in world_depths_in_range:
+                probability_matrix[world_depth == depth] = f(depth)
 
         return probability_matrix

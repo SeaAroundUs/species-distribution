@@ -39,8 +39,8 @@ def create_taxon_distribution(taxonkey):
 
         distribution_matrix = combine_probability_matrices(matrices)
 
-        # water_percentage = Grid().get_grid('PWater') / 100
-        # distribution_matrix *= water_percentage
+        water_percentage = Grid().get_grid('PWater') / 100
+        distribution_matrix *= water_percentage
 
         if settings.DEBUG:
             for i, m in enumerate(matrices):
@@ -62,6 +62,9 @@ def create_taxon_distribution(taxonkey):
 def create_and_save_taxon(taxonkey, force=False):
 
     distribution = create_taxon_distribution(taxonkey)
-    io.save_database(distribution, taxonkey)
-    io.save_hdf5(distribution, taxonkey, force=force)
-    logger.info('taxon {} complete'.format(taxonkey))
+    if distribution is not None:
+        io.save_database(distribution, taxonkey)
+        io.save_hdf5(distribution, taxonkey, force=force)
+        logger.info('taxon {} complete'.format(taxonkey))
+    else:
+        logger.critical('nothing done for taxon {}'.format(taxonkey))

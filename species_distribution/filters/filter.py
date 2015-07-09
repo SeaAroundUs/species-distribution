@@ -75,7 +75,7 @@ class BaseFilter():
         # short circuit easy answers:
         if seafloor_depth < taxon_maxdepth:
             return 1.0
-        if seafloor_depth > taxon_mindepth:
+        elif seafloor_depth > taxon_mindepth:
             return 0.0
 
         # create scalene triangle properties

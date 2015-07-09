@@ -192,7 +192,7 @@ class Filter(BaseFilter):
         # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
         # world_min_depth = self.grid.get_grid('EleMax')
-        ocean_depth = self.grid.get_grid('EleAvg')
+        ocean_depth = self.grid.get_grid('EleMin')
         percent_water = self.grid.get_grid('PWater')
 
         min_depth = -taxon.mindepth
@@ -215,6 +215,7 @@ class Filter(BaseFilter):
         )
         probability_matrix = self.get_probability_matrix()
         probability_matrix[mask] = 1
+
         # for i, j in np.ndindex(probability_matrix.shape):
         #     if (hasattr(taxon, 'polygon_matrix') and taxon.polygon_matrix.mask[i, j]):
         #         continue

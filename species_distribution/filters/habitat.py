@@ -199,7 +199,7 @@ class Filter(BaseFilter):
             {'habitat_attr': 'Offshore', 'world_attr': 'area_offshore', 'dist_independant': False},
             {'habitat_attr': 'Others', 'world_attr': 'water_area', 'dist_independant': False},
             {'habitat_attr': 'Coral', 'world_attr': 'Coral', 'dist_independant': True},
-            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary', 'dist_independant': True},
+            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary', 'dist_independant': False},
             # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass', 'dist_independant': True},
             {'habitat_attr': 'Seamount', 'world_attr': 'Seamount', 'dist_independant': False},
             {'habitat_attr': 'Shelf', 'world_attr': 'Shelf', 'dist_independant': False},
