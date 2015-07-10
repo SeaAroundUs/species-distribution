@@ -46,9 +46,9 @@ class Taxon(SpecDisModel):
         return self.sppgroup or 3
 
 
-class TaxonDistribution(SpecDisModel):
+class TaxonExtent(SpecDisModel):
     __table__ = Table(
-        'taxon_distribution',
+        'taxon_extent',
         Base.metadata,
         Column('taxon_key', Integer(), primary_key=True),
         autoload=True,

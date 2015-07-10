@@ -8,7 +8,7 @@ import sys
 import species_distribution.distribution as distribution
 import species_distribution.io as io
 from species_distribution.models.db import Session
-from species_distribution.models.taxa import Taxon, TaxonDistribution
+from species_distribution.models.taxa import Taxon, TaxonExtent
 
 STOP = False
 
@@ -46,7 +46,7 @@ def main(arguments):
         else:
             # only select taxa which have a polygon (distribution table, modelled "TaxaDistribution")
             taxa = session.query(Taxon) \
-                .join(TaxonDistribution, Taxon.taxon_key == TaxonDistribution.taxon_key) \
+                .join(TaxonExtent, Taxon.taxon_key == TaxonExtent.taxon_key) \
                 .all()
 
         logger.info("Found {} taxa".format(len(taxa)))

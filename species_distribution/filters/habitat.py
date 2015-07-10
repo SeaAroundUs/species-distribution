@@ -104,7 +104,7 @@ class Filter(BaseFilter):
         """
 
         grid = Grid()
-        total_area = grid.get_grid('t_area') * 10 ** 6  # meters**2
+        total_area = grid.get_grid('t_area') * 10 ** 6  # km**2 to meters**2
         matrix = self.get_probability_matrix()
 
         # bump up resolution by this factor for calculations
@@ -153,7 +153,7 @@ class Filter(BaseFilter):
                 apply_kernel_greater_than(high_resolution_matrix, ii, jj, kernel)
 
             except ValueError as e:
-                self.logger.info('skipping cell [{}, {}]. r1: {} r2: {}  value error: {}'.format(i, j, r1, r2, str(e)))
+                self.logger.debug('skipping cell [{}, {}]. r1: {} r2: {}  value error: {}'.format(i, j, r1, r2, str(e)))
 
         # downscale high resolution matrix
         matrix = self._rebin(high_resolution_matrix, matrix.shape)
@@ -200,7 +200,7 @@ class Filter(BaseFilter):
             {'habitat_attr': 'coral', 'world_attr': 'coral', 'dist_independant': True},
             {'habitat_attr': 'estuaries', 'world_attr': 'estuary', 'dist_independant': False},
             # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass', 'dist_independant': True},
-            {'habitat_attr': 'sea_mount', 'world_attr': 'sea_mount', 'dist_independant': False},
+            {'habitat_attr': 'sea_mount', 'world_attr': 'seamount', 'dist_independant': False},
             {'habitat_attr': 'shelf', 'world_attr': 'shelf', 'dist_independant': False},
             {'habitat_attr': 'slope', 'world_attr': 'slope', 'dist_independant': False},
             {'habitat_attr': 'abyssal', 'world_attr': 'abyssal', 'dist_independant': False},
