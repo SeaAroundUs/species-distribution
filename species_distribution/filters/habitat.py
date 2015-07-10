@@ -116,6 +116,17 @@ class Filter(BaseFilter):
         habitat_radius_m = np.sqrt(habitat_grid * total_area / np.pi)
         cell_length_m = np.sqrt(total_area)
 
+        # only handle centered square kernels now.
+        # At high latitudes, this simplification won't be valid.
+        # assuming square for now.
+        # ell_length = cell_length_m[i, j]
+
+        # r1 and r2 are in units of (higher resolution) grid cells
+        # Radius of the circular habitat
+        r2 = np.ceil(resolution_scale * habitat_radius_m / cell_length_m)
+        # radius of the effective distance from the edge of the habitat
+        r1 = np.ceil(r2 + resolution_scale * effective_distance * 1000 / cell_length_m)
+
         # use polygon matrix to reduce the number of cells to calculate
         polygon_matrix = PolygonFilter()._filter(taxon=taxon, session=session)
 
@@ -134,19 +145,9 @@ class Filter(BaseFilter):
                 continue
 
             try:
-
-                # only handle centered square kernels now.
-                # At high latitudes, this simplification won't be valid.
-                # assuming square for now.
-                cell_length = cell_length_m[i, j]
-
-                # r1 and r2 are in units of (higher resolution) grid cells
-                # Radius of the circular habitat
-                r2 = math.ceil(resolution_scale * habitat_radius_m[i, j] / cell_length)
-                # radius of the effective distance from the edge of the habitat
-                r1 = math.ceil(r2 + resolution_scale * effective_distance / cell_length)
-
-                kernel = conical_frustum_kernel(r1, r2)
+                _r1 = r1[i, j]
+                _r2 = r2[i, j]
+                kernel = conical_frustum_kernel(_r1, _r2)
                 # merge the kernel into to the high resolution matrix
                 ii = i * resolution_scale + kernel.shape[0] // 2
                 jj = j * resolution_scale + kernel.shape[1] // 2
@@ -231,7 +232,7 @@ class Filter(BaseFilter):
                 habitat_grid = habitat_grid / total_area
             if hab['world_attr'] == 'p_water':
                 total_area = grid.get_grid('t_area')
-                habitat_grid = habitat_grid / 100 * total_area
+                habitat_grid = habitat_grid / 100
 
             matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.effective_distance, session=session)
             matrix *= weight
