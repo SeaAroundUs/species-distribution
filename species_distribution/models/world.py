@@ -12,11 +12,12 @@ from .db import engine, Session, SpecDisModel, Base
 
 class GridPoint(SpecDisModel):
     __table__ = Table(
-        'world',
+        'cell',
         Base.metadata,
-        Column('Seq', Integer(), primary_key=True),
+        Column('cell_id', Integer(), primary_key=True),
         autoload=True,
-        autoload_with=engine
+        autoload_with=engine,
+        extend_existing=True
     )
 
 
@@ -37,10 +38,10 @@ class Grid():
         self.shape = (360, 720)
 
         if self.longitude is None:
-            self.longitude = self.get_grid(field='Lon')
+            self.longitude = self.get_grid(field='lon')
 
         if self.latitude is None:
-            self.latitude = self.get_grid(field='Lat')
+            self.latitude = self.get_grid(field='lat')
 
         assert(self.shape == self.longitude.shape)
 
@@ -69,21 +70,21 @@ class Grid():
     @property
     @functools.lru_cache(maxsize=2**32)
     def area_coast(self):
-        coastal_prop = self.get_grid('CoastalProp')
-        water_area = self.get_grid('Area')  # Area <-> WaterArea
+        coastal_prop = self.get_grid('coastal_prop')
+        water_area = self.get_grid('area')  # Area <-> WaterArea
         return coastal_prop * water_area
 
     @property
     @functools.lru_cache(maxsize=2**32)
     def area_offshore(self):
-        coastal_prop = self.get_grid('CoastalProp')
-        water_area = self.get_grid('Area')  # Area <-> WaterArea
+        coastal_prop = self.get_grid('coastal_prop')
+        water_area = self.get_grid('area')  # Area <-> WaterArea
         return (1 - coastal_prop) * water_area
 
     @property
     @functools.lru_cache(maxsize=2**32)
     def water_area(self):
-        percent_water = self.get_grid('PWater')
+        percent_water = self.get_grid('p_water')
         return percent_water / 100
 
     @property
@@ -108,7 +109,7 @@ class Grid():
             with Session() as session:
                 query = session \
                     .query(GridPoint) \
-                    .order_by('Row', 'Col') \
+                    .order_by('cell_row', 'cell_col') \
                     .values(attr)
 
                 grid_points = (r[0] for r in query)

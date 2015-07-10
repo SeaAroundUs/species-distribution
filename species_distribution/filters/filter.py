@@ -29,7 +29,6 @@ class BaseFilter():
 
     def get_probability_matrix(self):
         return np.ma.MaskedArray(data=np.full(self.grid.shape, 0, dtype=float), mask=True)
-        # return np.ma.MaskedArray(data=np.full(self.grid.shape, np.nan, dtype=float), mask=True)
 
     @classmethod
     def filter(cls, *args, **kwargs):

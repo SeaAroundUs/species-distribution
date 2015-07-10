@@ -1,6 +1,5 @@
 import functools
 import math
-import operator
 
 import numpy as np
 
@@ -33,7 +32,7 @@ class MembershipFunction():
         return np.interp(value, self.break_points, y_coords)
 
 
-@functools.lru_cache(maxsize=10 ** 3)
+@functools.lru_cache(maxsize=10 ** 4)
 def conical_frustum_kernel(r1, r2):
     """returns a square numpy array of side r1*2+1 containing a centered 0.0-1.0 density
     map of a conical frustum with inner (smaller) radius r2 and outer (larger) radius r1"""
@@ -105,7 +104,7 @@ class Filter(BaseFilter):
         """
 
         grid = Grid()
-        total_area = grid.get_grid('TArea') * 10 ** 6  # meters**2
+        total_area = grid.get_grid('t_area') * 10 ** 6  # meters**2
         matrix = self.get_probability_matrix()
 
         # bump up resolution by this factor for calculations
@@ -173,14 +172,14 @@ class Filter(BaseFilter):
             probability_matrix.mask &= matrix.mask
             probability_matrix += matrix
 
-        coastal_prop = grid.get_grid('CoastalProp')
-        if taxon_habitat.Inshore == 0:
+        coastal_prop = grid.get_grid('coastal_prop')
+        if taxon_habitat.inshore == 0:
             mask = coastal_prop == 1
             # if a cell has a value set by a distance independent filter already, don't mask it,
             # else mask it
             probability_matrix.mask &= mask
 
-        if taxon_habitat.Offshore == 0:
+        if taxon_habitat.offshore == 0:
             mask = coastal_prop == 0
             probability_matrix.mask &= mask
 
@@ -195,16 +194,16 @@ class Filter(BaseFilter):
     def _filter(self, taxon=None, session=None):
 
         habitats = [
-            {'habitat_attr': 'Inshore', 'world_attr': 'area_coast', 'dist_independant': False},
-            {'habitat_attr': 'Offshore', 'world_attr': 'area_offshore', 'dist_independant': False},
-            {'habitat_attr': 'Others', 'world_attr': 'water_area', 'dist_independant': False},
-            {'habitat_attr': 'Coral', 'world_attr': 'Coral', 'dist_independant': True},
-            {'habitat_attr': 'Estuaries', 'world_attr': 'Estuary', 'dist_independant': False},
+            {'habitat_attr': 'inshore', 'world_attr': 'area_coast', 'dist_independant': False},
+            {'habitat_attr': 'offshore', 'world_attr': 'area_offshore', 'dist_independant': False},
+            {'habitat_attr': 'others', 'world_attr': 'p_water', 'dist_independant': False},
+            {'habitat_attr': 'coral', 'world_attr': 'coral', 'dist_independant': True},
+            {'habitat_attr': 'estuaries', 'world_attr': 'estuary', 'dist_independant': False},
             # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass', 'dist_independant': True},
-            {'habitat_attr': 'Seamount', 'world_attr': 'Seamount', 'dist_independant': False},
-            {'habitat_attr': 'Shelf', 'world_attr': 'Shelf', 'dist_independant': False},
-            {'habitat_attr': 'Slope', 'world_attr': 'Slope', 'dist_independant': False},
-            {'habitat_attr': 'Abyssal', 'world_attr': 'Abyssal', 'dist_independant': False},
+            {'habitat_attr': 'sea_mount', 'world_attr': 'sea_mount', 'dist_independant': False},
+            {'habitat_attr': 'shelf', 'world_attr': 'shelf', 'dist_independant': False},
+            {'habitat_attr': 'slope', 'world_attr': 'slope', 'dist_independant': False},
+            {'habitat_attr': 'abyssal', 'world_attr': 'abyssal', 'dist_independant': False},
         ]
 
         probability_matrix = self.get_probability_matrix()
@@ -214,7 +213,7 @@ class Filter(BaseFilter):
         matrices = []
         dist_independent_matrices = [self.get_probability_matrix()]  # seed it with an empty one in case no others exist
 
-        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxonkey)
+        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
 
         for hab in habitats:
 
@@ -226,12 +225,15 @@ class Filter(BaseFilter):
             self.logger.debug('habitat: {}'.format(hab['habitat_attr']))
 
             habitat_grid = grid.get_grid(hab['world_attr'])
-            if hab['world_attr'] in ('area_offshore', 'area_coast', 'water_area', 'Shelf', 'Slope', 'Abyssal'):
+            if hab['world_attr'] in ('area_offshore', 'area_coast', 'shelf', 'slope', 'abyssal'):
                 # Area is in km2, convert to percentage
-                total_area = grid.get_grid('TArea')
+                total_area = grid.get_grid('t_area')
                 habitat_grid = habitat_grid / total_area
+            if hab['world_attr'] == 'p_water':
+                total_area = grid.get_grid('t_area')
+                habitat_grid = habitat_grid / 100 * total_area
 
-            matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.EffectiveD, session=session)
+            matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.effective_distance, session=session)
             matrix *= weight
             if hab['dist_independant']:
                 dist_independent_matrices.append(matrix)

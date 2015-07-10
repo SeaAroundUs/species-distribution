@@ -4,6 +4,7 @@ import sys
 import numpy as np
 
 from .filter import BaseFilter
+from species_distribution.models.taxa import TaxonHabitat
 import settings
 
 
@@ -183,8 +184,10 @@ class Filter(BaseFilter):
 
     def _filter(self, taxon=None, session=None):
 
-        if taxon.intertidal:
-            self.logger.debug('Skipping submergence filter for intertidal taxon {}'.format(taxon.taxonkey))
+        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
+
+        if taxon_habitat.intertidal:
+            self.logger.debug('Skipping submergence filter for intertidal taxon {}'.format(taxon.taxon_key))
             return
 
         # min and max are inverted between taxon and world
@@ -192,16 +195,16 @@ class Filter(BaseFilter):
         # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
         # world_min_depth = self.grid.get_grid('EleMax')
-        ocean_depth = self.grid.get_grid('EleMin')
-        percent_water = self.grid.get_grid('PWater')
+        ocean_depth = self.grid.get_grid('ele_min')
+        percent_water = self.grid.get_grid('p_water')
 
-        min_depth = -taxon.mindepth
-        max_depth = -taxon.maxdepth
+        min_depth = -taxon.min_depth
+        max_depth = -taxon.max_depth
 
-        p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.latnorth, taxon.latsouth)
+        p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.lat_north, taxon.lat_south)
 
         if settings.DEBUG:
-            self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.latnorth, taxon.latsouth, taxon.taxonkey)
+            self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.lat_north, taxon.lat_south, taxon.taxon_key)
 
         p_high_array = self._grid_parabola(p_high)
         p_low_array = self._grid_parabola(p_low)

@@ -13,7 +13,7 @@ class Filter(BaseFilter):
 
         probability_matrix = self.get_probability_matrix()
 
-        cells = polygon_cells_for_taxon(taxon.taxonkey)
+        cells = polygon_cells_for_taxon(taxon.taxon_key)
 
         # use numpy indexing to set all records of (row,col) to 1
         indexes = list(zip(*cells))

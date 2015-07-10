@@ -39,7 +39,7 @@ def create_taxon_distribution(taxonkey):
 
         distribution_matrix = combine_probability_matrices(matrices)
 
-        water_percentage = Grid().get_grid('PWater') / 100
+        water_percentage = Grid().get_grid('p_water') / 100
         distribution_matrix *= water_percentage
 
         if settings.DEBUG:

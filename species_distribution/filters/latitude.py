@@ -18,21 +18,21 @@ class Filter(BaseFilter):
         at the range mean
         """
 
-        taxon_range = taxon.latnorth - taxon.latsouth
-        taxon_mean = (taxon.latnorth + taxon.latsouth) / 2
+        taxon_range = taxon.lat_north - taxon.lat_south
+        taxon_mean = (taxon.lat_north + taxon.lat_south) / 2
 
-        middle_third_north = taxon.latnorth - (taxon_range / 3)
-        middle_third_south = taxon.latnorth - (2 * taxon_range / 3)
+        middle_third_north = taxon.lat_north - (taxon_range / 3)
+        middle_third_south = taxon.lat_north - (2 * taxon_range / 3)
 
         equator_in_middle_third = middle_third_north > 0 and middle_third_south < 0
 
         if equator_in_middle_third:
             # polygon distribution
-            x_points = (taxon.latsouth, middle_third_south, middle_third_north, taxon.latnorth)
+            x_points = (taxon.lat_south, middle_third_south, middle_third_north, taxon.lat_north)
             y_points = (0, 1, 1, 0)
         else:
             # triangle distribution
-            x_points = (taxon.latsouth, taxon_mean, taxon.latnorth)
+            x_points = (taxon.lat_south, taxon_mean, taxon.lat_north)
             y_points = (0, 1, 0)
 
         # get a 1-d longitudinal distribution for each regime

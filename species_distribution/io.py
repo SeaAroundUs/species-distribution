@@ -94,7 +94,7 @@ def save_hdf5(distribution, taxonkey, force=False):
 
         distribution_file = get_distribution_file()
 
-        key = 'taxa/' + str(taxon.taxonkey)
+        key = 'taxa/' + str(taxon.taxon_key)
 
         if key in completed_taxon():
             if not force:
@@ -109,8 +109,8 @@ def save_hdf5(distribution, taxonkey, force=False):
             fletcher32=True  # checksum
         )
 
-        dataset.attrs['long_name'] = '{} - {}, {}'.format(taxon.taxonkey, taxon.commonname, taxon.taxonname)
-        dataset.attrs['name'] = taxon.taxonkey
+        dataset.attrs['long_name'] = '{} - {}, {}'.format(taxon.taxon_key, taxon.common_name, taxon.scientific_name)
+        dataset.attrs['name'] = taxon.taxon_key
         dataset.dims.create_scale(distribution_file['latitude'], 'latitude')
         dataset.dims.create_scale(distribution_file['longitude'], 'longitude')
         dataset.attrs['units'] = 'relative_abundance'
@@ -132,7 +132,7 @@ def save_database(distribution, taxonkey):
 
         raw_conn = connection.connection.connection
         cursor = raw_conn.cursor()
-        cursor.execute("DELETE FROM taxon_distribution WHERE taxonkey = %s", (taxonkey, ))
+        cursor.execute("DELETE FROM taxon_distribution WHERE taxon_key = %s", (taxonkey, ))
 
         ravel = distribution.ravel()
         indexes = np.where(~(np.isnan(ravel) | ravel.mask))[0]
@@ -142,7 +142,7 @@ def save_database(distribution, taxonkey):
                 yield '{}\t{}\t{}\n'.format(taxonkey, seq, value)
 
         f = IteratorFile(records())
-        cursor.copy_from(f, 'taxon_distribution', columns=('taxonkey', 'cellid', 'relativeabundance'))
+        cursor.copy_from(f, 'taxon_distribution', columns=('taxon_key', 'cell_id', 'relative_abundance'))
         raw_conn.commit()
 
 

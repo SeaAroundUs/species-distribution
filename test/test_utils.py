@@ -1,7 +1,5 @@
 import unittest2
 
-import numpy as np
-
 from species_distribution import utils
 
 

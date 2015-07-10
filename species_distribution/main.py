@@ -9,8 +9,6 @@ import species_distribution.distribution as distribution
 import species_distribution.io as io
 from species_distribution.models.db import Session
 from species_distribution.models.taxa import Taxon, TaxonDistribution
-from species_distribution.models.world import Grid
-import species_distribution.filters as filters
 
 STOP = False
 
@@ -44,16 +42,16 @@ def main(arguments):
         if arguments.limit:
             taxa = session.query(Taxon).all()[0:arguments.limit]
         elif arguments.taxon:
-            taxa = session.query(Taxon).filter(Taxon.taxonkey.in_(arguments.taxon)).all()
+            taxa = session.query(Taxon).filter(Taxon.taxon_key.in_(arguments.taxon)).all()
         else:
-            # only select taxa which have a polygon (distribtution table, modelled "TaxaDistribution")
+            # only select taxa which have a polygon (distribution table, modelled "TaxaDistribution")
             taxa = session.query(Taxon) \
-                .join(TaxonDistribution, Taxon.taxonkey == TaxonDistribution.taxon) \
+                .join(TaxonDistribution, Taxon.taxon_key == TaxonDistribution.taxon_key) \
                 .all()
 
         logger.info("Found {} taxa".format(len(taxa)))
 
-        taxonkeys = [t.taxonkey for t in taxa]
+        taxonkeys = [t.taxon_key for t in taxa]
 
     with Pool(processes=arguments.processes) as pool:
         res = []

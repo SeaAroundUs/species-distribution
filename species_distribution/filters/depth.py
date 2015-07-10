@@ -19,11 +19,11 @@ class Filter(BaseFilter):
 
     def _filter(self, taxon=None, session=None):
 
-        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxonkey)
+        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
         probability_matrix = self.get_probability_matrix()
 
-        if taxon_habitat.Offshore == 0:
-            self.logger.debug('skipping depth filter for {} since Offshore==0'.format(taxon.taxonkey))
+        if taxon_habitat.offshore == 0:
+            self.logger.debug('skipping depth filter for {} since Offshore==0'.format(taxon.taxon_key))
             probability_matrix[:] = 1
 
         else:
@@ -32,10 +32,10 @@ class Filter(BaseFilter):
             # world goes from surface at EleMax: 0 to EleMin: -N at depth
             # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
-            mindepth = -taxon.mindepth
-            maxdepth = -taxon.maxdepth
+            mindepth = -taxon.min_depth
+            maxdepth = -taxon.max_depth
 
-            world_depth = self.grid.get_grid('EleAvg')
+            world_depth = self.grid.get_grid('ele_avg')
 
             deep_mask = world_depth < maxdepth
             probability_matrix[deep_mask] = 1.0

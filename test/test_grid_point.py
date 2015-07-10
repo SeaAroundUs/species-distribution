@@ -10,11 +10,11 @@ class TestGridPoint(unittest2.TestCase):
         seq = 246157
         with Session() as session:
             grid_point = session.query(GridPoint).get(seq)
-            self.assertEqual(342, grid_point.Row)
-            self.assertEqual(637, grid_point.Col)
+            self.assertEqual(342, grid_point.cell_row)
+            self.assertEqual(637, grid_point.cell_col)
 
     def test_grid_shape(self):
-        grid = Grid().get_grid(field='SST')
+        grid = Grid().get_grid(field='sst')
         self.assertEqual((360, 720), grid.shape)
 
     def test_grid(self):
@@ -22,7 +22,7 @@ class TestGridPoint(unittest2.TestCase):
         self.assertEqual((360, 720), grid.shape)
 
     def test_grid_value(self):
-        grid = Grid().get_grid(field='SST')
+        grid = Grid().get_grid(field='sst')
         self.assertEqual(-1.79, grid[0, 0])
 
     def test_derived_field_area_coast(self):

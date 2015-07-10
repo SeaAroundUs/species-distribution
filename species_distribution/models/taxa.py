@@ -7,18 +7,15 @@ from .db import SpecDisModel, engine, Base
 from species_distribution import exceptions
 
 
-FAO_IDS = (18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
-
-
 def polygon_cells_for_taxon(taxon_key):
 
     query = """
     WITH dis AS (
-        SELECT ST_SIMPLIFY(geom,.10) as geom FROM distribution
-        WHERE taxon=%s
+        SELECT ST_MAKEVALID(ST_SIMPLIFY(geom,.10)) as geom FROM distribution.taxon_extent
+        WHERE taxon_key=%s
     )
     SELECT g.row-1, g.col-1
-        FROM grid g
+        FROM distribution.grid g
          JOIN dis d ON (1=1)
         WHERE ST_INTERSECTS(g.geom, d.geom)
 
@@ -34,9 +31,9 @@ def polygon_cells_for_taxon(taxon_key):
 
 class Taxon(SpecDisModel):
     __table__ = Table(
-        'qryalltaxon',
+        'taxon',
         Base.metadata,
-        Column('taxonkey', Integer(), primary_key=True),
+        Column('taxon_key', Integer(), primary_key=True),
         autoload=True,
         autoload_with=engine
     )
@@ -45,23 +42,18 @@ class Taxon(SpecDisModel):
         return str(self.taxonkey)
 
     @property
-    def faos(self):
-        """returns a list of FAO regions this taxon is found in"""
-
-        return list(filter(lambda id: getattr(self, 'fao' + str(id)) == 1, FAO_IDS))
-
-    @property
     def pelagic(self):
         return self.sppgroup or 3
 
 
 class TaxonDistribution(SpecDisModel):
     __table__ = Table(
-        'distribution',
+        'taxon_distribution',
         Base.metadata,
-        Column('taxon', Integer(), primary_key=True),
+        Column('taxon_key', Integer(), primary_key=True),
         autoload=True,
-        autoload_with=engine
+        autoload_with=engine,
+        schema='distribution'
     )
 
 
@@ -69,7 +61,15 @@ class TaxonHabitat(SpecDisModel):
     __table__ = Table(
         'taxon_habitat',
         Base.metadata,
-        Column('TaxonKey', Integer(), primary_key=True),
+        Column('taxon_key', Integer(), primary_key=True),
         autoload=True,
-        autoload_with=engine
+        autoload_with=engine,
+        schema='distribution'
     )
+
+    @property
+    def faos(self):
+        """returns a list of FAO regions this taxon is found in"""
+
+        # remove nulls
+        return [fao for fao in self.found_in_fao_area_id if fao]
