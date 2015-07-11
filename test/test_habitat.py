@@ -67,3 +67,37 @@ class TestHabitat(unittest2.TestCase):
 
         # UL corner of kernel, should have original value since kernel value < .5
         self.assertAlmostEqual(array[i - kernel_size // 2, j - kernel_size // 2], .5)
+
+    def test_apply_kernel_greater_than_across_right_side(self):
+        # create an array containing constant value .5
+        # apply a kernel of 1s across the right side boundary
+        # kernel application should wrap around array
+
+        i, j = 5, 8
+        kernel_size = 5
+        array = np.ma.MaskedArray(data=np.full((10, 10), .5, dtype=np.float), mask=False)
+        kernel = np.ones(kernel_size ** 2).reshape(kernel_size, kernel_size)
+        kernel = np.ma.MaskedArray(data=kernel, mask=False)
+
+        filters.habitat.apply_kernel_greater_than(array, i, j, kernel)
+
+        # retained value, outside application area
+        self.assertAlmostEqual(array[5, 9], 1)
+        self.assertAlmostEqual(array[5, 0], 1)
+
+    def test_apply_kernel_greater_than_across_left_side(self):
+        # create an array containing constant value .5
+        # apply a kernel of 1s across the left side boundary
+        # kernel application should wrap around array
+
+        i, j = 5, 1
+        kernel_size = 5
+        array = np.ma.MaskedArray(data=np.full((10, 10), .5, dtype=np.float), mask=False)
+        kernel = np.ones(kernel_size ** 2).reshape(kernel_size, kernel_size)
+        kernel = np.ma.MaskedArray(data=kernel, mask=False)
+
+        filters.habitat.apply_kernel_greater_than(array, i, j, kernel)
+
+        # retained value, outside application area
+        self.assertAlmostEqual(array[5, 9], 1)
+        self.assertAlmostEqual(array[5, 0], 1)

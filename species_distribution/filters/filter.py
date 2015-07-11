@@ -47,6 +47,8 @@ class BaseFilter():
         # only values 0->1:
 
         assert(
+            probability is None
+            or
             np.ma.all(probability.mask)
             or
             np.isnan(probability.max())

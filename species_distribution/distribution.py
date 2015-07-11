@@ -15,7 +15,7 @@ def combine_probability_matrices(matrices):
     """given a sequence of probability matrices, combine them into a
     single matrix and return it"""
 
-    distribution = functools.reduce(operator.mul, matrices)
+    distribution = functools.reduce(operator.mul, (matrix for matrix in matrices if matrix is not None))
     # normalize distribution
     return distribution / distribution.max()
 
@@ -45,7 +45,8 @@ def create_taxon_distribution(taxonkey):
         if settings.DEBUG:
             for i, m in enumerate(matrices):
                 fname = '{}-{}-{}'.format(taxonkey, i, _filters[i]['name'])
-                io.save_image(m, fname)
+                if m is not None:
+                    io.save_image(m, fname)
 
             fname = taxonkey
             io.save_image(distribution_matrix, fname, enhance=False)

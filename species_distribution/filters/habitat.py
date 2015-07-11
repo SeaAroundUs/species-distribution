@@ -53,11 +53,22 @@ def conical_frustum_kernel(r1, r2):
     return kernel
 
 
+def merge_kernel_greater_than(a, x, y, kernel):
+    """ merges kernel into a at x,y.  Doesn't handle edge wrapping"""
+    _slice = np.index_exp[y:y + kernel.shape[0], x:x + kernel.shape[1]]
+    mask = (kernel < a[_slice]) | kernel.mask
+    a[_slice][~mask] = kernel[~mask]
+    a.mask[_slice][~mask] = False
+    return a
+
+
 def apply_kernel_greater_than(a, i, j, kernel):
     """
     applies kernel to array a at location i, j
     where kernel > array and returns a
     reference to the modified array a.
+
+    kernel application is wrapped around the array horizontally
 
     kernel should be square with odd side lengths
     so it can be applied symmetrically at i, j
@@ -66,13 +77,29 @@ def apply_kernel_greater_than(a, i, j, kernel):
     y = i - kernel.shape[0] // 2
     x = j - kernel.shape[1] // 2
 
-    _slice = np.index_exp[y:y + kernel.shape[0], x:x + kernel.shape[1]]
-
     # mask out values which are already higher than kernel would provide,
     # or are masked in the kernel
-    mask = (kernel < a[_slice]) | kernel.mask
-    a[_slice][~mask] = kernel[~mask]
-    a.mask[_slice][~mask] = False
+
+    rbound = x + kernel.shape[1]
+
+    if x < 0 or rbound > a.shape[1]:
+
+        if x < 0:
+            # extends beyond left boundary,
+            # move over to other side to treat both
+            # out of bounds cases the same
+            x = a.shape[1] + x
+            rbound = x + kernel.shape[1]
+
+        # extending byond right boundary
+        extra = rbound - a.shape[1]
+        # merge into right side
+        merge_kernel_greater_than(a, x, y, kernel[:, 0:kernel.shape[1] - extra])
+        # then left
+        merge_kernel_greater_than(a, 0, y, kernel[:, kernel.shape[1] - extra: kernel.shape[1]])
+
+    else:
+        a = merge_kernel_greater_than(a, x, y, kernel)
     return a
 
 
@@ -130,18 +157,14 @@ class Filter(BaseFilter):
         # use polygon matrix to reduce the number of cells to calculate
         polygon_matrix = PolygonFilter()._filter(taxon=taxon, session=session)
 
-        for i, j in np.ndindex(matrix.shape):
+        edge_padding = 20
+        for i, j in np.ndindex(matrix.shape[0] - edge_padding * 2, matrix.shape[1]):
+
+            i += edge_padding
+
             if (not habitat_grid[i, j] > 0):
                 continue
             if polygon_matrix.mask[i, j]:
-                continue
-
-            edge_padding = 20
-            if i < edge_padding \
-                or j < edge_padding \
-                or i > (matrix.shape[0] - edge_padding) \
-                    or j > (matrix.shape[1] - edge_padding):
-
                 continue
 
             try:
