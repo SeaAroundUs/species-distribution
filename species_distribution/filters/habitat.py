@@ -55,6 +55,10 @@ def conical_frustum_kernel(r1, r2):
 
 def merge_kernel_greater_than(a, x, y, kernel):
     """ merges kernel into a at x,y.  Doesn't handle edge wrapping"""
+
+    # mask out values which are already higher than kernel would provide,
+    # or are masked in the kernel
+
     _slice = np.index_exp[y:y + kernel.shape[0], x:x + kernel.shape[1]]
     mask = (kernel < a[_slice]) | kernel.mask
     a[_slice][~mask] = kernel[~mask]
@@ -77,9 +81,6 @@ def apply_kernel_greater_than(a, i, j, kernel):
     y = i - kernel.shape[0] // 2
     x = j - kernel.shape[1] // 2
 
-    # mask out values which are already higher than kernel would provide,
-    # or are masked in the kernel
-
     rbound = x + kernel.shape[1]
 
     if x < 0 or rbound > a.shape[1]:
@@ -91,7 +92,7 @@ def apply_kernel_greater_than(a, i, j, kernel):
             x = a.shape[1] + x
             rbound = x + kernel.shape[1]
 
-        # extending byond right boundary
+        # extending beyond right boundary
         extra = rbound - a.shape[1]
         # merge into right side
         merge_kernel_greater_than(a, x, y, kernel[:, 0:kernel.shape[1] - extra])
