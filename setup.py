@@ -2,8 +2,6 @@ import subprocess
 
 from setuptools import setup, find_packages
 
-import unittest2
-
 def get_hash():
     return subprocess \
             .check_output(('git', 'rev-parse', '--short', 'HEAD')) \
@@ -16,7 +14,7 @@ setup(
     description='Species distribution for Sea Around Us Project',
     test_suite='unittest2.collector',
     packages=find_packages(),
-    install_requires=['h5py', 'numpy', 'psycopg2', 'python-dateutil', 'SQLAlchemy', 'unittest2' ],
+    install_requires=['h5py', 'numpy', 'psycopg2', 'python-dateutil', 'SQLAlchemy'],
     scripts=[
         'bin/h5-to-database', 
         'bin/h5-to-png', 
