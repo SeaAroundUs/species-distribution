@@ -92,6 +92,18 @@ class Filter(BaseFilter):
             raise
         return 10 ** (sum_of_logs / len(a))
 
+    def get_scenario(self, lat_north, lat_south):
+        if lat_north >= 0 and lat_south >= 0:
+            return 1
+        if lat_north <= 0 and lat_south <= 0:
+            return 2
+        if lat_north >= 0 and lat_south <= 0 and abs(lat_north) > abs(lat_south):
+            return 3
+        if lat_north >= 0 and lat_south <= 0 and abs(lat_north) < abs(lat_south):
+            return 4
+        if lat_north >= 0 and lat_south >= 0 and abs(lat_north) == abs(lat_south):
+            return 5
+
     def fit_parabolas(self, min_depth, max_depth, lat_north, lat_south):
         """ returns a tuple of two functions (upper, lower) which are fitted
         polynomials representing the upper and lower parabolas defined by the
@@ -105,45 +117,84 @@ class Filter(BaseFilter):
         mean_depth = -self._geometric_mean((abs(min_depth), abs(max_depth)))
 
         # depending on relationship of latnorth/latsouth and the equator, define different upper
-        # and lower parabolas according to business rules.  The 3 points defining each parabola are
+        # and lower parabolas according to business rules.  The 3 or 4 points defining each parabola are
         # defined by each branch then modeled as p_high (upper parabola) and p_low (lower parabola)
 
-        if lat_north > 0 and lat_north < 60 and lat_south < 0 and lat_south > -60:
-            # latitude range spans equator, and within 60/-60
-            # section c)
-            x_high = (60, lat_north, -60)
-            y_high = (0, min_depth, 0)
+        scenario = self.get_scenario(lat_north, lat_south)
 
-            x_low = (60, 0, -60)
-            y_low = (mean_depth, max_depth, mean_depth)
+        if lat_north >= 60 or lat_north <= -60 or lat_south >= 60 or lat_south <= -60:
+            # Case 1, not bounded by 60/-60
+            if scenario == 1:
+                x_high = (60, 0, -60)
+                y_high = (min_depth, mean_depth, mean_depth)
 
-        elif (lat_north > 0 and lat_south > 0 and lat_north <= 60) or (lat_south <= 0 and lat_north <= 0 and lat_south >= -60):
-            # latitude range is in one hemisphere, and within 60/-60
-            x_high = [60, lat_north, -60]
-            y_high = [0, min_depth, 0]
+                x_low = (60, lat_south, -lat_south, -60)
+                y_low = (mean_depth, max_depth, max_depth, mean_depth)
 
-            x_low = [60, lat_south, -60]
-            y_low = [mean_depth, max_depth, mean_depth]
+            elif scenario == 2:
+                x_high = (60, 0, -60)
+                y_high = (min_depth, mean_depth, mean_depth)
 
-        else:  # if lat_north > 60 or lat_south < -60:
-            # section d) of documentation
+                x_low = (60, lat_north, -lat_north, -60)
+                y_low = (mean_depth, max_depth, max_depth, mean_depth)
 
-            if lat_north <= 60 and lat_north >= -60 :
-                # TODO: had to handle this case outside of the business rules
-                # since they produce an inverted parabola
-                # find out the appropriate action.
-                x_high = [lat_north, 60, -60]
-                y_high = [mean_depth, min_depth, min_depth]
-            else:
-                x_high = [0, 60, -60]
-                y_high = [mean_depth, min_depth, min_depth]
+            elif scenario == 3:
+                x_high = (60, 0, -60)
+                y_high = (min_depth, mean_depth, mean_depth)
 
-            if lat_south <= 60 and lat_south >= -60:
-                x_low = [60, lat_south, -60]
-                y_low = [mean_depth, max_depth, mean_depth]
-            else:
-                x_low = [lat_south, 60, -60]
-                y_low = [mean_depth, max_depth, max_depth]
+                x_low = (60, 0, -60)
+                y_low = (mean_depth, max_depth, mean_depth)
+
+            elif scenario == 4:
+                x_high = (60, 0, -60)
+                y_high = (min_depth, min_depth, mean_depth)
+
+                x_low = (60, 0, -60)
+                y_low = (mean_depth, max_depth, mean_depth)
+
+            elif scenario == 5:
+                x_high = (60, 0, -60)
+                y_high = (min_depth, mean_depth, mean_depth)
+
+                x_low = (60, 0, -60)
+                y_low = (mean_depth, max_depth, mean_depth)
+
+        else:
+            # Case 2, bounded by 60/-60
+            if scenario == 1:
+                x_high = (60, lat_north, -lat_north, -60)
+                y_high = (0, min_depth, min_depth, 0)
+
+                x_low = (60, lat_south, -lat_south, -60)
+                y_low = (mean_depth, max_depth, max_depth, mean_depth)
+
+            elif scenario == 2:
+                x_high = (60, lat_south, -lat_south, -60)
+                y_high = (0, min_depth, min_depth, 0)
+
+                x_low = (60, lat_north, -lat_north, -60)
+                y_low = (mean_depth, max_depth, max_depth, mean_depth)
+
+            elif scenario == 3:
+                x_high = (60, lat_north, -lat_north, -60)
+                y_high = (0, min_depth, min_depth, 0)
+
+                x_low = (60, 0, -60)
+                y_low = (mean_depth, max_depth, mean_depth)
+
+            elif scenario == 4:
+                x_high = (60, lat_south, -lat_south, -60)
+                y_high = (0, min_depth, min_depth, 0)
+
+                x_low = (60, 0, -60)
+                y_low = (mean_depth, max_depth, mean_depth)
+
+            elif scenario == 5:
+                x_high = (60, lat_north, -lat_north, -60)
+                y_high = (0, min_depth, min_depth, 0)
+
+                x_low = (60, 0, -60)
+                y_low = (mean_depth, max_depth, mean_depth)
 
         p_high = np.poly1d(np.polyfit(x_high, y_high, 2))
         p_low = np.poly1d(np.polyfit(x_low, y_low, 2))
@@ -200,6 +251,10 @@ class Filter(BaseFilter):
 
         min_depth = -taxon.min_depth
         max_depth = -taxon.max_depth
+
+        if max_depth == 9999 or abs(taxon.lat_north) == 90 or abs(taxon.lat_south) == 90:
+            # short circuit, won't do submergence with missing data
+            return
 
         p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.lat_north, taxon.lat_south)
 
