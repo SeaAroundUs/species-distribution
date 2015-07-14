@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
 
 from .db import SpecDisModel, engine, Base
-from species_distribution import exceptions
+from ..exceptions import NoPolygonException
 
 
 def polygon_cells_for_taxon(taxon_key):
@@ -25,7 +25,7 @@ def polygon_cells_for_taxon(taxon_key):
         result = conn.execute(query, taxon_key)
         data = result.fetchall()
         if len(data) == 0:
-            raise exceptions.NoPolygonException
+            raise NoPolygonException
         return data
 
 

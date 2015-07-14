@@ -8,7 +8,7 @@ user_settings_file = os.path.join(user_settings_dir, 'settings.json')
 
 settings = {
 
-    'DEBUG': True,
+    'DEBUG': False,
 
     'NUMPY_WARNINGS': 'warn',
 

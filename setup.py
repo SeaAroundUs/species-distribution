@@ -14,7 +14,7 @@ setup(
     description='Species distribution for Sea Around Us Project',
     test_suite='unittest2.collector',
     packages=find_packages(),
-    install_requires=['h5py', 'numpy', 'psycopg2', 'python-dateutil', 'SQLAlchemy'],
+    install_requires=['h5py', 'numpy', 'psycopg2', 'python-dateutil', 'SQLAlchemy', 'pyproj'],
     scripts=[
         'bin/h5-to-database', 
         'bin/h5-to-png', 

@@ -3,10 +3,10 @@ import logging
 import operator
 
 import settings
-import species_distribution.exceptions as exceptions
-import species_distribution.filters as filters
-import species_distribution.io as io
-from species_distribution.models.world import Grid
+from .exceptions import InvalidTaxonException, NoPolygonException
+from .filters import filter, polygon, fao, latitude, depth, habitat, submergence
+from . import io
+from .models.world import Grid
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +26,12 @@ def create_taxon_distribution(taxonkey):
     logger.info("working on taxon {}".format(taxonkey))
 
     _filters = (
-        {'name': 'polygon', 'f': filters.polygon.Filter.filter},
-        {'name': 'fao', 'f': filters.fao.Filter.filter},
-        {'name': 'latitude', 'f': filters.latitude.Filter.filter},
-        {'name': 'depth', 'f': filters.depth.Filter.filter},
-        {'name': 'habitat', 'f': filters.habitat.Filter.filter},
-        {'name': 'submergence', 'f': filters.submergence.Filter.filter},
+        {'name': 'polygon', 'f': polygon.Filter.filter},
+        {'name': 'fao', 'f': fao.Filter.filter},
+        {'name': 'latitude', 'f': latitude.Filter.filter},
+        {'name': 'depth', 'f': depth.Filter.filter},
+        {'name': 'habitat', 'f': habitat.Filter.filter},
+        {'name': 'submergence', 'f': submergence.Filter.filter},
     )
 
     try:
@@ -51,12 +51,12 @@ def create_taxon_distribution(taxonkey):
             fname = taxonkey
             io.save_image(distribution_matrix, fname, enhance=False)
             logger.debug('grid cache usage: {}'.format(Grid().get_grid.cache_info()))
-            logger.debug('filter cache usage: {}'.format(filters.filter.BaseFilter.depth_probability.cache_info()))
+            logger.debug('filter cache usage: {}'.format(filter.BaseFilter.depth_probability.cache_info()))
         return distribution_matrix
 
-    except exceptions.InvalidTaxonException as e:
+    except InvalidTaxonException as e:
         logger.warn("Invalid taxon {}. Error: {}".format(taxonkey, str(e)))
-    except exceptions.NoPolygonException as e:
+    except NoPolygonException as e:
         logger.warn("No polygon exists for taxon {}".format(taxonkey))
 
 

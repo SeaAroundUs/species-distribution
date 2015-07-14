@@ -3,9 +3,7 @@ import logging
 import os
 
 import h5py
-import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image, ImageOps
 
 from .models.db import engine, Session
 from .models.taxa import Taxon
@@ -31,6 +29,10 @@ def h5py_dataset_to_numpy(func):
 @h5py_dataset_to_numpy
 def save_image(array, name, enhance=False):
     """saves 2d array of values 0-1 to a grayscale PNG"""
+
+    import matplotlib.pyplot as plt
+    from PIL import Image, ImageOps
+
     png = os.path.join(settings.PNG_DIR, str(name) + '.png')
     logger.debug('writing {}'.format(png))
 

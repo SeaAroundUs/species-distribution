@@ -1,1 +1,1 @@
-from .distribution import create_taxon_distribution
+from .distribution import create_taxon_distribution, create_and_save_taxon

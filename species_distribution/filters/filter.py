@@ -33,7 +33,7 @@ class BaseFilter():
     @classmethod
     def filter(cls, *args, **kwargs):
         instance = cls()
-        instance.logger.debug('applying {}'.format(cls.__module__))
+        instance.logger.info('applying {}'.format(cls.__module__))
         with Session() as session:
             taxon = session.query(Taxon).get(kwargs['taxon'])
 
