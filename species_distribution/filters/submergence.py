@@ -261,7 +261,6 @@ class Filter(BaseFilter):
 
         if settings.DEBUG:
             self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.lat_north, taxon.lat_south, taxon.taxon_key)
-            return self.get_probability_matrix()
 
         p_high_array = self._grid_parabola(p_high)
         p_low_array = self._grid_parabola(p_low)

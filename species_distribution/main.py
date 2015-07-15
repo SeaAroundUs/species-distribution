@@ -5,6 +5,7 @@ from multiprocessing import Pool
 import signal
 import sys
 
+import settings
 import species_distribution.distribution as distribution
 import species_distribution.io as io
 from species_distribution.models.db import Session
@@ -40,7 +41,8 @@ def main(arguments):
     with Session() as session:
         # get taxa
         if arguments.limit:
-            taxa = session.query(Taxon)[0:arguments.limit]
+            taxa = session.query(Taxon) \
+                .join(TaxonExtent, Taxon.taxon_key == TaxonExtent.taxon_key)[0:arguments.limit]
         elif arguments.taxon:
             taxa = session.query(Taxon).filter(Taxon.taxon_key.in_(arguments.taxon)).all()
         else:
@@ -66,16 +68,17 @@ def main(arguments):
                 logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxonkey))
                 continue
 
-            function = distribution.create_and_save_taxon
+            function = distribution.threaded_create_taxon_distribution
             args = (taxonkey,)
-            kwargs = dict(force=arguments.force)
-            if arguments.processes > 1:
-                res.append(pool.apply_async(function, args, kwargs))
-            else:
-                function(*args, **kwargs)
+            res.append(pool.apply_async(function, args))
 
         for r in res:
             r.wait()
+            taxon_key, matrix = r.get()
+            if matrix is not None:
+                io.save_database(matrix, taxon_key)
+                if settings.DEBUG:
+                    io.save_hdf5(matrix, taxon_key, force=True)
 
     io.close()
     logger.info('distribution complete')

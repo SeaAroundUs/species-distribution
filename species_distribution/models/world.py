@@ -7,7 +7,7 @@ from pyproj import Geod
 from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
 
-from .db import engine, Session, SpecDisModel, Base
+from .db import Session, SpecDisModel, Base
 
 
 class GridPoint(SpecDisModel):
@@ -16,7 +16,6 @@ class GridPoint(SpecDisModel):
         Base.metadata,
         Column('cell_id', Integer(), primary_key=True),
         autoload=True,
-        autoload_with=engine,
         extend_existing=True
     )
 
@@ -93,7 +92,7 @@ class Grid():
 
     def rows_to_grid(self, rows, dtype=np.float):
         """ convert ordered rows of (value) to a 2d grid """
-        grid = np.fromiter(rows, dtype=dtype)
+        grid = np.array(rows, dtype=dtype)
         return grid.reshape(self.shape)
 
     @functools.lru_cache(maxsize=2 ** 32)
@@ -112,6 +111,6 @@ class Grid():
                     .order_by('cell_row', 'cell_col') \
                     .values(attr)
 
-                grid_points = (r[0] for r in query)
+                grid_points = [r[0] for r in query]
 
             return self.rows_to_grid(grid_points, dtype=attr.type.python_type)

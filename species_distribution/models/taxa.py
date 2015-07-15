@@ -3,7 +3,7 @@
 from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
 
-from .db import SpecDisModel, engine, Base
+from .db import SpecDisModel, Session, Base
 from ..exceptions import NoPolygonException
 
 
@@ -12,7 +12,7 @@ def polygon_cells_for_taxon(taxon_key):
     query = """
     WITH dis AS (
         SELECT ST_MAKEVALID(ST_SIMPLIFY(geom,.10)) as geom FROM distribution.taxon_extent
-        WHERE taxon_key=%s
+        WHERE taxon_key=:taxon_key
     )
     SELECT g.row-1, g.col-1
         FROM distribution.grid g
@@ -21,8 +21,8 @@ def polygon_cells_for_taxon(taxon_key):
 
     """
 
-    with engine.connect() as conn:
-        result = conn.execute(query, taxon_key)
+    with Session() as session:
+        result = session.execute(query, {'taxon_key': taxon_key})
         data = result.fetchall()
         if len(data) == 0:
             raise NoPolygonException
@@ -35,7 +35,6 @@ class Taxon(SpecDisModel):
         Base.metadata,
         Column('taxon_key', Integer(), primary_key=True),
         autoload=True,
-        autoload_with=engine
     )
 
     def __str__(self):
@@ -52,7 +51,6 @@ class TaxonExtent(SpecDisModel):
         Base.metadata,
         Column('taxon_key', Integer(), primary_key=True),
         autoload=True,
-        autoload_with=engine,
         schema='distribution'
     )
 
@@ -63,7 +61,6 @@ class TaxonHabitat(SpecDisModel):
         Base.metadata,
         Column('taxon_key', Integer(), primary_key=True),
         autoload=True,
-        autoload_with=engine,
         schema='distribution'
     )
 

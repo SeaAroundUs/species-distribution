@@ -20,6 +20,11 @@ def combine_probability_matrices(matrices):
     return distribution / distribution.max()
 
 
+def threaded_create_taxon_distribution(taxon_key):
+    result = create_taxon_distribution(taxon_key)
+    return (taxon_key, result)
+
+
 def create_taxon_distribution(taxonkey):
     """returns a distribution matrix for given taxon taxon by applying filters"""
 
@@ -68,7 +73,8 @@ def create_and_save_taxon(taxonkey, force=False):
     distribution = create_taxon_distribution(taxonkey)
     if distribution is not None:
         io.save_database(distribution, taxonkey)
-        io.save_hdf5(distribution, taxonkey, force=force)
+        if settings.DEBUG:
+            io.save_hdf5(distribution, taxonkey, force=force)
         logger.info('taxon {} complete'.format(taxonkey))
     else:
         logger.critical('nothing done for taxon {}'.format(taxonkey))
