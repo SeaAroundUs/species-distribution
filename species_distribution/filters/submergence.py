@@ -93,6 +93,7 @@ class Filter(BaseFilter):
         return 10 ** (sum_of_logs / len(a))
 
     def get_scenario(self, lat_north, lat_south):
+        """ returns a scenario ID based on the documentation table """
         if lat_north >= 0 and lat_south >= 0:
             return 1
         if lat_north <= 0 and lat_south <= 0:
@@ -101,7 +102,7 @@ class Filter(BaseFilter):
             return 3
         if lat_north >= 0 and lat_south <= 0 and abs(lat_north) < abs(lat_south):
             return 4
-        if lat_north >= 0 and lat_south >= 0 and abs(lat_north) == abs(lat_south):
+        if lat_north >= 0 and lat_south <= 0 and abs(lat_north) == abs(lat_south):
             return 5
 
     def fit_parabolas(self, min_depth, max_depth, lat_north, lat_south):
@@ -260,6 +261,7 @@ class Filter(BaseFilter):
 
         if settings.DEBUG:
             self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.lat_north, taxon.lat_south, taxon.taxon_key)
+            return self.get_probability_matrix()
 
         p_high_array = self._grid_parabola(p_high)
         p_low_array = self._grid_parabola(p_low)

@@ -4,7 +4,7 @@ import operator
 
 import settings
 from .exceptions import InvalidTaxonException, NoPolygonException
-from .filters import filter, polygon, fao, latitude, depth, habitat, submergence
+from .filters import polygon, fao, latitude, depth, habitat, submergence
 from . import io
 from .models.world import Grid
 
@@ -15,7 +15,7 @@ def combine_probability_matrices(matrices):
     """given a sequence of probability matrices, combine them into a
     single matrix and return it"""
 
-    distribution = functools.reduce(operator.mul, (matrix for matrix in matrices if matrix is not None))
+    distribution = functools.reduce(operator.mul, matrices)
     # normalize distribution
     return distribution / distribution.max()
 
@@ -36,6 +36,10 @@ def create_taxon_distribution(taxonkey):
 
     try:
         matrices = [f['f'](taxon=taxonkey) for f in _filters]
+        matrices = list(filter(lambda x: x is not None, matrices))  # remove Nones
+        if len(matrices) == 0:
+            logger.warn('No filters returned for taxon {}'.format(taxonkey))
+            return
 
         distribution_matrix = combine_probability_matrices(matrices)
 
@@ -51,7 +55,6 @@ def create_taxon_distribution(taxonkey):
             fname = taxonkey
             io.save_image(distribution_matrix, fname, enhance=False)
             logger.debug('grid cache usage: {}'.format(Grid().get_grid.cache_info()))
-            logger.debug('filter cache usage: {}'.format(filter.BaseFilter.depth_probability.cache_info()))
         return distribution_matrix
 
     except InvalidTaxonException as e:

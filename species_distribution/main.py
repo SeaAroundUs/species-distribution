@@ -40,13 +40,14 @@ def main(arguments):
     with Session() as session:
         # get taxa
         if arguments.limit:
-            taxa = session.query(Taxon).all()[0:arguments.limit]
+            taxa = session.query(Taxon)[0:arguments.limit]
         elif arguments.taxon:
             taxa = session.query(Taxon).filter(Taxon.taxon_key.in_(arguments.taxon)).all()
         else:
             # only select taxa which have a polygon (distribution table, modelled "TaxaDistribution")
             taxa = session.query(Taxon) \
                 .join(TaxonExtent, Taxon.taxon_key == TaxonExtent.taxon_key) \
+                .order_by(Taxon.taxon_key) \
                 .all()
 
         logger.info("Found {} taxa".format(len(taxa)))

@@ -1,5 +1,4 @@
 import functools
-import math
 
 import numpy as np
 
@@ -60,10 +59,9 @@ def merge_kernel_greater_than(a, x, y, kernel):
     # or are masked in the kernel
 
     _slice = np.index_exp[y:y + kernel.shape[0], x:x + kernel.shape[1]]
-    mask = (kernel < a[_slice]) | kernel.mask
-    a[_slice][~mask] = kernel[~mask]
-    a.mask[_slice][~mask] = False
-    return a
+    view = a[_slice]
+    mask = (kernel < view) | kernel.mask
+    np.ma.putmask(view, ~mask, kernel)
 
 
 def apply_kernel_greater_than(a, i, j, kernel):
@@ -100,7 +98,7 @@ def apply_kernel_greater_than(a, i, j, kernel):
         merge_kernel_greater_than(a, 0, y, kernel[:, kernel.shape[1] - extra: kernel.shape[1]])
 
     else:
-        a = merge_kernel_greater_than(a, x, y, kernel)
+        merge_kernel_greater_than(a, x, y, kernel)
     return a
 
 
@@ -136,7 +134,7 @@ class Filter(BaseFilter):
         matrix = self.get_probability_matrix()
 
         # bump up resolution by this factor for calculations
-        resolution_scale = 10
+        resolution_scale = 5
 
         new_size = np.multiply(matrix.shape, resolution_scale)
         high_resolution_matrix = np.ma.resize(matrix, new_size)
@@ -158,7 +156,7 @@ class Filter(BaseFilter):
         # use polygon matrix to reduce the number of cells to calculate
         polygon_matrix = PolygonFilter()._filter(taxon=taxon, session=session)
 
-        edge_padding = 20
+        edge_padding = 10
         for i, j in np.ndindex(matrix.shape[0] - edge_padding * 2, matrix.shape[1]):
 
             i += edge_padding
