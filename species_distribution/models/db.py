@@ -5,7 +5,7 @@ import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 import settings
 
@@ -22,19 +22,14 @@ Base.metadata.bind = engine
 @contextmanager
 def Session():
     """Provide a transactional scope around a series of operations."""
-    _engine = create_engine(connection_str, echo=False)
-    session_maker = sessionmaker(bind=_engine)
-
-    session = session_maker()
     try:
+        _engine = create_engine(connection_str, echo=False)
+        session_maker = sessionmaker(bind=_engine, autocommit=False, autoflush=False)
+        session = scoped_session(session_maker)
         yield session
-        session.commit()
     except Exception as e:
-        logger.debug('rolling back. Error: ' + str(e))
-        session.rollback()
+        logger.debug('caught session error: ' + str(e))
         raise
-    finally:
-        session.close()
 
 
 class SpecDisModel(Base):

@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW v_taxon_distribution AS (
+CREATE OR REPLACE VIEW distribution.v_taxon_distribution AS (
  SELECT a.taxon_distribution_id,
     a.cell_id,
     a.taxon_key,
@@ -8,7 +8,7 @@ CREATE OR REPLACE VIEW v_taxon_distribution AS (
      JOIN taxon_distribution a ON g.id = a.cell_id
 );
 
-CREATE OR REPLACE VIEW v_world as
+CREATE OR REPLACE VIEW distribution.v_world as
  SELECT w.cell_id,
     w.lon,
     w.lat,

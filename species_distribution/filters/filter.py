@@ -26,9 +26,10 @@ class BaseFilter():
         self.logger = logging.getLogger(__name__)
         np.seterrcall(self.logger.warn)
         np.seterr(all=NUMPY_WARNINGS)
+        self.probability_matrix = np.ma.MaskedArray(data=np.full(self.grid.shape, 0, dtype=float), mask=True)
 
     def get_probability_matrix(self):
-        return np.ma.MaskedArray(data=np.full(self.grid.shape, 0, dtype=float), mask=True)
+        return self.probability_matrix.copy()
 
     @classmethod
     def filter(cls, *args, **kwargs):
