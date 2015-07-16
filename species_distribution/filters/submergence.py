@@ -47,36 +47,6 @@ class Filter(BaseFilter):
 
     2)  Dhigh corresponds to Lhigh and Dlow to Llow;
 
-    3)  Parabolas are drawn using three points (see figures a-c in the methods
-    page http://www.seaaroundus.org/catch-reconstruction-and-allocation-
-    methods/#_Toc421534359);
-
-    a.   The parabola describing the shallow depth gradient is less concave than
-    that of the deeper depth gradient by setting the geometric mean depth
-    (transforming Dmax and Dmin into logs before taking the average value, then
-    taking the antilog of the average value) as its deepest depth;
-
-    b.  If the N/S limits are not higher than 60°N or lower than 60°S (see case
-    in figure a), then the parabola describing the shallow depth gradient is
-    obtained using the following three points: Dat60N=0, Dat60S=0, and
-    DatNlimit=Dmin. The parabola describing the deep depth gradient is obtained
-    using the following three points: Dat60N=10^( (logDmin+logDmax)/2),
-    DatSlimit=Dmax, Dat60S=10^((logDmin+logDmax)/2).
-
-    c.   If the northern latitudinal limit is in the northern hemisphere and the
-    southern latitudinal limit is in the southern hemisphere (not higher than
-    60°N or lower than 60°S), the shallow depth gradient parabola is as in (b)
-    above and the deep depth gradient parabola is obtained using the following
-    three points: Dmax is positioned at the equator (figure b) and Dat60N and
-    Dat60S are as in (b) above;
-
-    d.  If the computed parabolas intercept D=0 at latitudes higher than 60°N
-    and/or lower than 60°S (figure c), then, the shallow depth gradient parabola
-    is obtained using the following three points: Dat60N=Dmin, Dat60S=Dmin, and
-    DatNlimit=0; and the deep depth gradient parabola is obtained using the
-    following three points: Dat60N and Dat60S = 10^( (logDmin+logDmax)/2), and
-    DatSlimit=Dmax.
-
     The resulting depth at latitude parabolas define an area inside the shallow
     and deep gradient lines where the species is most likely to be found. This
     is then used to “shave off” cells that do not fall within the defined area.
@@ -122,8 +92,8 @@ class Filter(BaseFilter):
         # defined by each branch then modeled as p_high (upper parabola) and p_low (lower parabola)
 
         scenario = self.get_scenario(lat_north, lat_south)
-
-        if lat_north >= 60 or lat_north <= -60 or lat_south >= 60 or lat_south <= -60:
+        case = (lat_north >= 60 or lat_north <= -60 or lat_south >= 60 or lat_south <= -60) and 1 or 2
+        if case == 1:
             # Case 1, not bounded by 60/-60
             if scenario == 1:
                 x_high = (60, 0, -60)
@@ -134,7 +104,7 @@ class Filter(BaseFilter):
 
             elif scenario == 2:
                 x_high = (60, 0, -60)
-                y_high = (min_depth, mean_depth, mean_depth)
+                y_high = (min_depth, mean_depth, min_depth)
 
                 x_low = (60, lat_north, -lat_north, -60)
                 y_low = (mean_depth, max_depth, max_depth, mean_depth)
@@ -160,14 +130,15 @@ class Filter(BaseFilter):
                 x_low = (60, 0, -60)
                 y_low = (mean_depth, max_depth, mean_depth)
 
-        else:
+        elif case == 2:
             # Case 2, bounded by 60/-60
             if scenario == 1:
                 x_high = (60, lat_north, -lat_north, -60)
                 y_high = (0, min_depth, min_depth, 0)
 
                 x_low = (60, lat_south, -lat_south, -60)
-                y_low = (mean_depth, max_depth, max_depth, mean_depth)
+                y_low = None
+                # y_low = (mean_depth, max_depth, max_depth, mean_depth)
 
             elif scenario == 2:
                 x_high = (60, lat_south, -lat_south, -60)
@@ -198,6 +169,12 @@ class Filter(BaseFilter):
                 y_low = (mean_depth, max_depth, mean_depth)
 
         p_high = np.poly1d(np.polyfit(x_high, y_high, 2))
+
+        if case == 2 and scenario == 1:
+            # special case to ensure p_low is lower than p_high
+            c = p_high[0]  # coefficient of x^0, the vertical offset
+            y_low = (c, max_depth+c, max_depth+c, c)
+
         p_low = np.poly1d(np.polyfit(x_low, y_low, 2))
 
         return p_high, p_low
@@ -237,9 +214,20 @@ class Filter(BaseFilter):
     def _filter(self, taxon=None, session=None):
 
         taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
+        min_depth = -taxon.min_depth
+        max_depth = -taxon.max_depth
 
         if taxon_habitat.intertidal:
             self.logger.debug('Skipping submergence filter for intertidal taxon {}'.format(taxon.taxon_key))
+            return
+
+        if (   (max_depth == 9999)
+            or (abs(taxon.lat_north) == 90)
+            or (abs(taxon.lat_south) == 90)
+            or (taxon.lat_north >= 60 and taxon.lat_south >= 60)
+            or (taxon.lat_north <= -60 and taxon.lat_south <= -60)
+            ) :
+            # short circuit, won't do submergence with unsupported data
             return
 
         # min and max are inverted between taxon and world
@@ -249,13 +237,6 @@ class Filter(BaseFilter):
         # world_min_depth = self.grid.get_grid('EleMax')
         ocean_depth = self.grid.get_grid('ele_min')
         percent_water = self.grid.get_grid('p_water')
-
-        min_depth = -taxon.min_depth
-        max_depth = -taxon.max_depth
-
-        if max_depth == 9999 or abs(taxon.lat_north) == 90 or abs(taxon.lat_south) == 90:
-            # short circuit, won't do submergence with missing data
-            return
 
         p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.lat_north, taxon.lat_south)
 

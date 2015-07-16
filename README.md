@@ -11,6 +11,10 @@ dist/species_distribution-2.0.0_dev1e7e8a4-py3-none-any.whl
 The .whl file can then be distributed and installed anywhere via
 <pre>pip install species_distribution-2.0.0_dev1e7e8a4-py3-none-any.whl</pre>
 
+## Develop
+
+<pre>python setup.py develop</pre>
+
 ## Test
 
 Just run
