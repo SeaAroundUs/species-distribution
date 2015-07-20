@@ -31,7 +31,7 @@ class MembershipFunction():
         return np.interp(value, self.break_points, y_coords)
 
 
-@functools.lru_cache(maxsize=10 ** 4)
+@functools.lru_cache(maxsize=None)
 def conical_frustum_kernel(r1, r2):
     """returns a square numpy array of side r1*2+1 containing a centered 0.0-1.0 density
     map of a conical frustum with inner (smaller) radius r2 and outer (larger) radius r1"""

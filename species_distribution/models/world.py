@@ -51,7 +51,7 @@ class Grid():
         return (x + w * y) + 1
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache(maxsize=None)
     def cell_height(self):
         cell_height = np.full(self.shape, np.nan)
         geod = Geod(ellps='WGS84')
@@ -67,21 +67,21 @@ class Grid():
         return cell_height
 
     @property
-    @functools.lru_cache(maxsize=2**32)
+    @functools.lru_cache(maxsize=None)
     def area_coast(self):
         coastal_prop = self.get_grid('coastal_prop')
         water_area = self.get_grid('area')  # Area <-> WaterArea
         return coastal_prop * water_area
 
     @property
-    @functools.lru_cache(maxsize=2**32)
+    @functools.lru_cache(maxsize=None)
     def area_offshore(self):
         coastal_prop = self.get_grid('coastal_prop')
         water_area = self.get_grid('area')  # Area <-> WaterArea
         return (1 - coastal_prop) * water_area
 
     @property
-    @functools.lru_cache(maxsize=2**32)
+    @functools.lru_cache(maxsize=None)
     def water_area(self):
         percent_water = self.get_grid('p_water')
         return percent_water / 100
@@ -95,7 +95,7 @@ class Grid():
         grid = np.array(rows, dtype=dtype)
         return grid.reshape(self.shape)
 
-    @functools.lru_cache(maxsize=2 ** 32)
+    @functools.lru_cache(maxsize=None)
     def get_grid(self, field='SST'):
         """returns a spatial 2D numpy array of the field specified"""
 

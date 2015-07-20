@@ -155,7 +155,7 @@ def close():
         _distribution_file.close()
 
 
-@functools.lru_cache(maxsize=2**32)
+@functools.lru_cache(maxsize=None)
 def completed_taxon():
     distribution_file = get_distribution_file()
     return distribution_file.keys()

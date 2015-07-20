@@ -30,6 +30,8 @@ def Session():
     except Exception as e:
         logger.debug('caught session error: ' + str(e))
         raise
+    finally:
+        session.close()
 
 
 class SpecDisModel(Base):

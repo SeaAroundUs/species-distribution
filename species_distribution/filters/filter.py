@@ -59,7 +59,7 @@ class BaseFilter():
 
         return probability
 
-    @functools.lru_cache(maxsize=2**20)
+    @functools.lru_cache(maxsize=None)
     def depth_probability(self, seafloor_depth, taxon_mindepth, taxon_maxdepth):
         """
         calculates probability of taxon in seafloor_depth of water based on a
