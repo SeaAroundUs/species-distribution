@@ -173,9 +173,19 @@ class Filter(BaseFilter):
         if case == 2 and scenario == 1:
             # special case to ensure p_low is lower than p_high
             c = p_high[0]  # coefficient of x^0, the vertical offset
-            y_low = (c, max_depth+c, max_depth+c, c)
+            y_low = (c, max_depth + c, max_depth + c, c)
 
         p_low = np.poly1d(np.polyfit(x_low, y_low, 2))
+
+        # [SAU-1316]: if parabola shallow slope > parabola deep slope,
+        # then redraw parabola shallow using (60, Dmin), (0, Dgm) and (-60, Dmin).
+        a_high = p_high[2]
+        a_low = p_low[2]
+        if a_high > a_low:
+            self.logger.info('recalculating upper parabola')
+            x_high = (60, 0, -60)
+            y_high = (min_depth, mean_depth, min_depth)
+            p_high = np.poly1d(np.polyfit(x_high, y_high, 2))
 
         return p_high, p_low
 

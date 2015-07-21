@@ -2,33 +2,12 @@ import functools
 
 import numpy as np
 
+import settings
+from species_distribution import io
 from species_distribution.filters.filter import BaseFilter
 from species_distribution.filters.polygon import Filter as PolygonFilter
 from species_distribution.models.taxa import TaxonHabitat
 from species_distribution.models.world import Grid
-
-
-class MembershipFunction():
-    """ give break points for 3 membership categories:
-    e.g. [[25, 50, 100, 150]]"""
-
-    def __init__(self, break_points):
-        self.break_points = (0, ) + tuple(break_points)
-
-    def values(self, value):
-        return self.low(value), self.middle(value), self.high(value)
-
-    def low(self, value):
-        y_coords = (1, 1, 0, 0, 0)
-        return np.interp(value, self.break_points, y_coords)
-
-    def middle(self, value):
-        y_coords = (0, 0, 1, 1, 0)
-        return np.interp(value, self.break_points, y_coords)
-
-    def high(self, value):
-        y_coords = (0, 0, 0, 0, 1)
-        return np.interp(value, self.break_points, y_coords)
 
 
 @functools.lru_cache(maxsize=None)
@@ -104,14 +83,6 @@ def apply_kernel_greater_than(a, i, j, kernel):
 
 class Filter(BaseFilter):
 
-    def versatility(self, taxon):
-        """ membership function for versatility.  14-4.pdf pp. 32 """
-        return MembershipFunction((.25, .5, .5, .75))
-
-    def maximum_length(self, taxon):
-        """ membership function for maximum length.  14-4.pdf pp. 32 """
-        return MembershipFunction((25, 50, 100, 150))
-
     def _rebin(self, a, shape):
         """ return a new array which has been rebinned to the new shape """
 
@@ -120,7 +91,7 @@ class Filter(BaseFilter):
         sh = shape[0], a.shape[0] // shape[0], shape[1], a.shape[1] // shape[1]
         return a.reshape(sh).mean(-1).mean(1)
 
-    def calculate_matrix(self, taxon, habitat_grid, effective_distance, session=None):
+    def calculate_matrix(self, taxon, habitat_grid, effective_distance, session=None, habitat_name=None):
         """given a habitat_grid containing global habitat fractions
         and an effective_distance in km, returns a distribution matrix
         for that habitat
@@ -134,7 +105,7 @@ class Filter(BaseFilter):
         matrix = self.get_probability_matrix()
 
         # bump up resolution by this factor for calculations
-        resolution_scale = 5
+        resolution_scale = 10
 
         new_size = np.multiply(matrix.shape, resolution_scale)
         high_resolution_matrix = np.ma.resize(matrix, new_size)
@@ -178,6 +149,9 @@ class Filter(BaseFilter):
             except ValueError as e:
                 self.logger.debug('skipping cell [{}, {}]. r1: {} r2: {}  value error: {}'.format(i, j, r1, r2, str(e)))
 
+        if settings.DEBUG:
+            io.save_image(high_resolution_matrix, '{}-habitat-{}.png'.format(taxon.taxon_key, habitat_name))
+
         # downscale high resolution matrix
         matrix = self._rebin(high_resolution_matrix, matrix.shape)
         return matrix
@@ -206,7 +180,6 @@ class Filter(BaseFilter):
             mask = coastal_prop == 0
             probability_matrix.mask &= mask
 
-        # probability_matrix = functools.reduce(operator.add, matrices + [distance_independent_probability_matrix])
         for matrix in matrices:
             probability_matrix.mask &= matrix.mask
             probability_matrix += matrix
@@ -256,7 +229,13 @@ class Filter(BaseFilter):
                 total_area = grid.get_grid('t_area')
                 habitat_grid = habitat_grid / 100
 
-            matrix = self.calculate_matrix(taxon, habitat_grid, taxon_habitat.effective_distance, session=session)
+            matrix = self.calculate_matrix(
+                taxon,
+                habitat_grid,
+                taxon_habitat.effective_distance,
+                session=session,
+                habitat_name=hab['habitat_attr']
+            )
             matrix *= weight
             if hab['dist_independant']:
                 dist_independent_matrices.append(matrix)

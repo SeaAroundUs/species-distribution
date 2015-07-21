@@ -92,7 +92,7 @@ class Grid():
 
     def rows_to_grid(self, rows, dtype=np.float):
         """ convert ordered rows of (value) to a 2d grid """
-        grid = np.array(rows, dtype=dtype)
+        grid = np.fromiter(rows, dtype=dtype)
         return grid.reshape(self.shape)
 
     @functools.lru_cache(maxsize=None)
@@ -111,6 +111,6 @@ class Grid():
                     .order_by('cell_row', 'cell_col') \
                     .values(attr)
 
-                grid_points = [r[0] for r in query]
+                grid_points = (r[0] for r in query)
 
             return self.rows_to_grid(grid_points, dtype=attr.type.python_type)
