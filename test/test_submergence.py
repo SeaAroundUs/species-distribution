@@ -25,8 +25,8 @@ class TestHabitat(unittest2.TestCase):
         lat_north = 90
         lat_south = -90
         upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
-        self.assertAlmostEqual(lower_f(0), -526.1, places=1)
-        self.assertLess(mean_depth, upper_f(0))
+        self.assertAlmostEqual(lower_f(0), -299.99, places=1)
+        self.assertAlmostEqual(mean_depth, upper_f(0))
 
     def test_400250_parabola_fit(self):
         # this taxa was producing inverted parabolas
@@ -36,7 +36,7 @@ class TestHabitat(unittest2.TestCase):
         lat_north = -23
         lat_south = -67
         upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
-        self.assertAlmostEqual(upper_f(0), -607.6, places=1)
+        self.assertAlmostEqual(upper_f(0), -547.7, places=1)
 
     def test_500871_parabola_fit(self):
         submergence_filter = filters.submergence.Filter()
@@ -56,4 +56,4 @@ class TestHabitat(unittest2.TestCase):
         lat_north = 45
         lat_south = 20
         upper_f, lower_f = submergence_filter.fit_parabolas(min_depth, max_depth, lat_north, lat_south)
-        self.assertAlmostEqual(upper_f(0), -157.7, places=1)
+        self.assertAlmostEqual(upper_f(0), -86.3, places=1)

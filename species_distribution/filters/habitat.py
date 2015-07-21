@@ -100,8 +100,7 @@ class Filter(BaseFilter):
         so the conical frustum kernel can be applied to each cell
         """
 
-        grid = Grid()
-        total_area = grid.get_grid('t_area') * 10 ** 6  # km**2 to meters**2
+        total_area = self.grid.get_grid('t_area') * 10 ** 6  # km**2 to meters**2
         matrix = self.get_probability_matrix()
 
         # bump up resolution by this factor for calculations
@@ -221,12 +220,11 @@ class Filter(BaseFilter):
             self.logger.debug('habitat: {}'.format(hab['habitat_attr']))
 
             habitat_grid = grid.get_grid(hab['world_attr'])
-            if hab['world_attr'] in ('area_offshore', 'area_coast', 'shelf', 'slope', 'abyssal'):
+            if hab['world_attr'] in ('area_offshore', 'area_coast', 'estuary', 'shelf', 'slope', 'abyssal'):
                 # Area is in km2, convert to percentage
                 total_area = grid.get_grid('t_area')
                 habitat_grid = habitat_grid / total_area
-            if hab['world_attr'] == 'p_water':
-                total_area = grid.get_grid('t_area')
+            if hab['world_attr'] in ('p_water', 'seamount'):
                 habitat_grid = habitat_grid / 100
 
             matrix = self.calculate_matrix(
