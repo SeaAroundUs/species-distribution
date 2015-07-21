@@ -150,7 +150,7 @@ class Filter(BaseFilter):
                 self.logger.debug('skipping cell [{}, {}]. r1: {} r2: {}  value error: {}'.format(i, j, r1, r2, str(e)))
 
         if settings.DEBUG:
-            io.save_image(high_resolution_matrix, '{}-habitat-{}.png'.format(taxon.taxon_key, habitat_name))
+            io.save_image(high_resolution_matrix, '{}-habitat-{}'.format(taxon.taxon_key, habitat_name))
 
         # downscale high resolution matrix
         matrix = self._rebin(high_resolution_matrix, matrix.shape)

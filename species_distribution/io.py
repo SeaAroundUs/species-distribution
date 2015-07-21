@@ -33,6 +33,9 @@ def save_image(array, name, enhance=False):
     import matplotlib.pyplot as plt
     from PIL import Image, ImageOps
 
+    if not os.path.isdir(settings.PNG_DIR):
+        os.makedirs(settings.PNG_DIR)
+
     png = os.path.join(settings.PNG_DIR, str(name) + '.png')
     logger.debug('writing {}'.format(png))
 
