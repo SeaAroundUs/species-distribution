@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 def combine_probability_matrices(matrices):
     """given a sequence of probability matrices, combine them into a
-    single matrix and return it"""
+    single matrix with sum 1.0 and return it"""
 
     distribution = functools.reduce(operator.mul, matrices)
     # normalize distribution
-    return distribution / distribution.max()
+    return distribution / distribution.sum()
 
 
 def threaded_create_taxon_distribution(taxon_key):
