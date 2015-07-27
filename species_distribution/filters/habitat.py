@@ -127,6 +127,7 @@ class Filter(BaseFilter):
         polygon_matrix = PolygonFilter()._filter(taxon=taxon, session=session)
 
         edge_padding = 10
+
         for i, j in np.ndindex(matrix.shape[0] - edge_padding * 2, matrix.shape[1]):
 
             i += edge_padding

@@ -16,7 +16,7 @@ def combine_probability_matrices(matrices):
     single matrix with sum 1.0 and return it"""
 
     distribution = functools.reduce(operator.mul, matrices)
-    # normalize distribution
+    # normalize
     return distribution / distribution.sum()
 
 
@@ -40,11 +40,8 @@ def create_taxon_distribution(taxonkey):
     )
 
     try:
-        matrices = [f['f'](taxon=taxonkey) for f in _filters]
+        matrices = (f['f'](taxon=taxonkey) for f in _filters)
         matrices = list(filter(lambda x: x is not None, matrices))  # remove Nones
-        if len(matrices) == 0:
-            logger.warn('No filters returned for taxon {}'.format(taxonkey))
-            return
 
         distribution_matrix = combine_probability_matrices(matrices)
 
@@ -54,12 +51,11 @@ def create_taxon_distribution(taxonkey):
         if settings.DEBUG:
             for i, m in enumerate(matrices):
                 fname = '{}-{}-{}'.format(taxonkey, i, _filters[i]['name'])
-                if m is not None:
-                    io.save_image(m, fname)
+                io.save_image(m, fname)
 
-            fname = taxonkey
-            io.save_image(distribution_matrix, fname, enhance=False)
+            io.save_image(distribution_matrix, taxonkey)
             logger.debug('grid cache usage: {}'.format(Grid().get_grid.cache_info()))
+
         return distribution_matrix
 
     except InvalidTaxonException as e:

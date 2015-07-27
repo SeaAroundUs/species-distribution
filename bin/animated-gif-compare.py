@@ -30,7 +30,7 @@ distribution = h5py.File('species-distribution.hdf5', 'r')
 
 taxa = distribution['taxa'].keys()
 
-pool = Pool(8)
+pool = Pool(4)
 
 with open('gifs/index.html', 'w') as index:
 

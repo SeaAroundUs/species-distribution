@@ -19,6 +19,7 @@ class BaseFilter():
 
     taxon should be a taxon ID which will be converted to a Taxon object
     and the SQLAlchemy session will be passed in by filter
+
     """
 
     def __init__(self):
@@ -65,7 +66,7 @@ class BaseFilter():
         calculates probability of taxon in seafloor_depth of water based on a
         triangular distribution with maximum at 1/3 down
 
-        currently used by depth and submergence filters
+        currently used by depth filter
 
         parameters
         seafloor_depth of seafloor (in negative meters)
