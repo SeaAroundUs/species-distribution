@@ -3,8 +3,8 @@
 import json
 import os
 
-user_settings_dir = os.path.join(os.path.expanduser('~'), '.species-distribution')
-user_settings_file = os.path.join(user_settings_dir, 'settings.json')
+user_settings_dir = os.path.dirname(__file__)
+user_settings_file = os.path.join(user_settings_dir, '.settings.json')
 
 settings = {
 

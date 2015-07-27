@@ -2,8 +2,8 @@
 
 import argparse
 
-import settings
 from species_distribution.main import main
+from species_distribution import settings
 
 
 description = """

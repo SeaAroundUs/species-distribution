@@ -5,7 +5,7 @@ import numpy as np
 
 from .filter import BaseFilter
 from species_distribution.models.taxa import TaxonHabitat
-import settings
+from species_distribution import settings
 
 
 class Filter(BaseFilter):

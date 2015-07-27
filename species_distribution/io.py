@@ -7,7 +7,7 @@ import numpy as np
 from .models.db import engine, Session
 
 from .utils import IteratorFile
-import settings
+from . import settings
 
 logger = logging.getLogger(__name__)
 

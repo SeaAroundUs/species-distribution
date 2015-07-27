@@ -2,10 +2,10 @@ import functools
 import logging
 import operator
 
-import settings
 from .exceptions import InvalidTaxonException, NoPolygonException
 from .filters import polygon, fao, latitude, depth, habitat, submergence
 from . import io
+from . import settings
 from .models.world import Grid
 
 logger = logging.getLogger(__name__)

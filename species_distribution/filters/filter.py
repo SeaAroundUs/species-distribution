@@ -7,7 +7,7 @@ import numpy as np
 from species_distribution.models.db import Session
 from species_distribution.models.taxa import Taxon
 from species_distribution.models.world import Grid
-from settings import NUMPY_WARNINGS
+from species_distribution.settings import NUMPY_WARNINGS
 
 
 class BaseFilter():
