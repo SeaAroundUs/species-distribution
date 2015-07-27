@@ -52,6 +52,13 @@ def main(arguments):
                 .order_by(Taxon.taxon_key) \
                 .all()
 
+        if not arguments.force:
+            # running in non-force mode, don't overwrite existing distributions
+            completed_taxa = filter(lambda t: t.taxon_key in io.completed_taxon(), taxa)
+            taxa = list(filter(lambda t: t.taxon_key not in io.completed_taxon(), taxa))
+            for taxon in completed_taxa:
+                logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxon.taxon_key))
+
         logger.info("Found {} taxa".format(len(taxa)))
 
         taxonkeys = [t.taxon_key for t in taxa]
@@ -64,10 +71,6 @@ def main(arguments):
                 logger.critical("Quitting early due to SIGINT")
                 break
 
-            if not arguments.force and '/taxa/' + str(taxonkey) in io.completed_taxon():
-                logger.info('taxon {} exists in output, skipping it.  Use -f to force'.format(taxonkey))
-                continue
-
             function = distribution.threaded_create_taxon_distribution
             args = (taxonkey,)
             res.append(pool.apply_async(function, args))
@@ -76,9 +79,7 @@ def main(arguments):
             r.wait()
             taxon_key, matrix = r.get()
             if matrix is not None:
+                logger.info('saving {} to DB'.format(taxon_key))
                 io.save_database(matrix, taxon_key)
-                if settings.DEBUG:
-                    io.save_hdf5(matrix, taxon_key, force=True)
 
-    io.close()
     logger.info('distribution complete')
