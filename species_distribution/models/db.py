@@ -24,7 +24,7 @@ def Session():
     """Provide a transactional scope around a series of operations."""
     try:
         _engine = create_engine(connection_str, echo=False)
-        session_maker = sessionmaker(bind=_engine, autocommit=False, autoflush=False)
+        session_maker = sessionmaker(bind=_engine, autocommit=True, autoflush=False)
         session = scoped_session(session_maker)
         yield session
     except Exception as e:

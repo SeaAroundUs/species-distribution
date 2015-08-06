@@ -65,11 +65,12 @@ def main(arguments):
 
     if arguments.processes == 1:
         # no pool
-        for taxon_key in taxonkeys:
+        for i, taxon_key in enumerate(taxonkeys):
             if STOP:
                 logger.critical("Quitting early due to SIGINT")
                 break
 
+            logger.info("starting work on taxon key {} [{}/{}]".format(taxon_key, i + 1, len(taxa)))
             matrix = distribution.create_taxon_distribution(taxon_key)
             if matrix is not None:
                 logger.info('saving {} to DB'.format(taxon_key))
