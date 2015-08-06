@@ -63,23 +63,36 @@ def main(arguments):
 
         taxonkeys = [t.taxon_key for t in taxa]
 
-    with Pool(processes=arguments.processes) as pool:
-        res = []
-        for taxonkey in taxonkeys:
-
+    if arguments.processes == 1:
+        # no pool
+        for taxon_key in taxonkeys:
             if STOP:
                 logger.critical("Quitting early due to SIGINT")
                 break
 
-            function = distribution.threaded_create_taxon_distribution
-            args = (taxonkey,)
-            res.append(pool.apply_async(function, args))
-
-        for r in res:
-            r.wait()
-            taxon_key, matrix = r.get()
+            matrix = distribution.create_taxon_distribution(taxon_key)
             if matrix is not None:
                 logger.info('saving {} to DB'.format(taxon_key))
                 io.save_database(matrix, taxon_key)
+    else:
+        # pool
+        with Pool(processes=arguments.processes) as pool:
+            res = []
+            for taxonkey in taxonkeys:
+
+                if STOP:
+                    logger.critical("Quitting early due to SIGINT")
+                    break
+
+                function = distribution.threaded_create_taxon_distribution
+                args = (taxonkey,)
+                res.append(pool.apply_async(function, args))
+
+            for r in res:
+                r.wait()
+                taxon_key, matrix = r.get()
+                if matrix is not None:
+                    logger.info('saving {} to DB'.format(taxon_key))
+                    io.save_database(matrix, taxon_key)
 
     logger.info('distribution complete')

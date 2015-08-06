@@ -70,21 +70,20 @@ class Grid():
     @functools.lru_cache(maxsize=None)
     def area_coast(self):
         coastal_prop = self.get_grid('coastal_prop')
-        water_area = self.get_grid('area')  # Area <-> WaterArea
-        return coastal_prop * water_area
+        return coastal_prop * self.water_area
 
     @property
     @functools.lru_cache(maxsize=None)
     def area_offshore(self):
         coastal_prop = self.get_grid('coastal_prop')
-        water_area = self.get_grid('area')  # Area <-> WaterArea
-        return (1 - coastal_prop) * water_area
+        # water_area = self.get_grid('area')  # Area <-> WaterArea
+        return (1 - coastal_prop) * self.water_area
 
     @property
     @functools.lru_cache(maxsize=None)
     def water_area(self):
-        percent_water = self.get_grid('p_water')
-        return percent_water / 100
+        percent_water = self.get_grid('percent_water')
+        return percent_water / 100 * self.get_grid('total_area')
 
     @property
     def field_names(self):
@@ -103,7 +102,7 @@ class Grid():
             # Grid.field exists as a property
             return getattr(self, field)
         else:
-            # need to get query the world table
+            # need to query the world table
             attr = getattr(GridPoint, field)
             with Session() as session:
                 query = session \

@@ -231,12 +231,12 @@ class Filter(BaseFilter):
             self.logger.debug('Skipping submergence filter for intertidal taxon {}'.format(taxon.taxon_key))
             return
 
-        if (   (max_depth == 9999)
+        if ((max_depth == 9999)
             or (abs(taxon.lat_north) == 90)
             or (abs(taxon.lat_south) == 90)
             or (taxon.lat_north >= 60 and taxon.lat_south >= 60)
             or (taxon.lat_north <= -60 and taxon.lat_south <= -60)
-            ) :
+        ):
             # short circuit, won't do submergence with unsupported data
             return
 
@@ -246,7 +246,7 @@ class Filter(BaseFilter):
 
         # world_min_depth = self.grid.get_grid('EleMax')
         ocean_depth = self.grid.get_grid('ele_min')
-        percent_water = self.grid.get_grid('p_water')
+        percent_water = self.grid.get_grid('percent_water')
 
         p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.lat_north, taxon.lat_south)
 
