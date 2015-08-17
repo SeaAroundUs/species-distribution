@@ -2,7 +2,7 @@ import functools
 
 import numpy as np
 
-from species_distribution import io
+from species_distribution import sd_io as io
 from species_distribution import settings
 from species_distribution.filters.filter import BaseFilter
 from species_distribution.filters.polygon import Filter as PolygonFilter

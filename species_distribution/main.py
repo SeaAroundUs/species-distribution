@@ -6,8 +6,7 @@ import signal
 import sys
 
 import species_distribution.distribution as distribution
-import species_distribution.io as io
-from species_distribution import settings
+from species_distribution import sd_io as io
 from species_distribution.models.db import Session
 from species_distribution.models.taxa import Taxon, TaxonExtent
 

@@ -4,7 +4,7 @@ import operator
 
 from .exceptions import InvalidTaxonException, NoPolygonException
 from .filters import polygon, fao, latitude, depth, habitat, submergence
-from . import io
+from . import sd_io as io
 from . import settings
 from .models.world import Grid
 

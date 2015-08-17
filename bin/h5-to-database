@@ -3,7 +3,7 @@
 import argparse
 import logging
 
-from species_distribution import io
+from species_distribution import sd_id as io
 
 logging.basicConfig(level=logging.INFO)
 

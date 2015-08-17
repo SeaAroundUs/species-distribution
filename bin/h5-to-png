@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-from species_distribution import io
+from species_distribution import sd_io as io
 
 distribution = io.get_distribution_file()
 
