@@ -9,6 +9,7 @@ import species_distribution.distribution as distribution
 from species_distribution import sd_io as io
 from species_distribution.models.db import Session
 from species_distribution.models.taxa import Taxon, TaxonExtent
+from species_distribution import settings
 
 STOP = False
 
@@ -36,7 +37,11 @@ signal.signal(signal.SIGINT, signal_handler)
 def main(arguments):
     configure_logging(arguments.verbose and logging.DEBUG or logging.INFO)
     logger.info("starting distribution")
-
+    logger.info("connecting to Host: {} DB: {} User: {}".format(
+            settings.DB['host'],
+            settings.DB['db'],
+            settings.DB['username'])
+    )
     with Session() as session:
         # get taxa
         if arguments.limit:

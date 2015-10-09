@@ -42,7 +42,7 @@ class Taxon(SpecDisModel):
 
     @property
     def pelagic(self):
-        return self.sppgroup or 3
+        return self.functional_group_id in (1,2,3)
 
 
 class TaxonExtent(SpecDisModel):

@@ -181,8 +181,9 @@ class Filter(BaseFilter):
             probability_matrix.mask &= mask
 
         for matrix in matrices:
-            probability_matrix.mask &= matrix.mask
+            mask = probability_matrix.mask & matrix.mask
             probability_matrix += matrix
+            probability_matrix.mask = mask
 
         probability_matrix /= probability_matrix.max()
         return probability_matrix
@@ -216,6 +217,10 @@ class Filter(BaseFilter):
             weight = getattr(taxon_habitat, hab['habitat_attr'])
 
             if not weight > 0:
+                continue
+
+            if taxon.pelagic and (hab['habitat_attr'] in ('shelf', 'slope')):
+                self.logger.debug('pelagic taxon skipping habitat: {}'.format(hab['habitat_attr']))
                 continue
 
             self.logger.debug('habitat: {}'.format(hab['habitat_attr']))
