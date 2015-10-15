@@ -219,10 +219,6 @@ class Filter(BaseFilter):
             if not weight > 0:
                 continue
 
-            if taxon.pelagic and (hab['habitat_attr'] in ('shelf', 'slope')):
-                self.logger.debug('pelagic taxon skipping habitat: {}'.format(hab['habitat_attr']))
-                continue
-
             self.logger.debug('habitat: {}'.format(hab['habitat_attr']))
 
             habitat_grid = grid.get_grid(hab['world_attr'])

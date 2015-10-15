@@ -24,28 +24,30 @@ class Filter(BaseFilter):
 
         if taxon_habitat.offshore == 0:
             self.logger.debug('skipping depth filter for {} since Offshore==0'.format(taxon.taxon_key))
-            probability_matrix[:] = 1
+            return
 
-        else:
+        if taxon.pelagic:
+            self.logger.debug('skipping depth filter for pelagic taxon {}'.format(taxon.taxon_key))
+            return
 
-            # min and max are inverted between taxon and world
-            # world goes from surface at EleMax: 0 to EleMin: -N at depth
-            # taxon goes from surface mindepth 0 to maxdepth: N at depth
+        # min and max are inverted between taxon and world
+        # world goes from surface at EleMax: 0 to EleMin: -N at depth
+        # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
-            mindepth = -taxon.min_depth
-            maxdepth = -taxon.max_depth
+        mindepth = -taxon.min_depth
+        maxdepth = -taxon.max_depth
 
-            world_depth = self.grid.get_grid('ele_avg')
+        world_depth = self.grid.get_grid('ele_avg')
 
-            deep_mask = world_depth < maxdepth
-            probability_matrix[deep_mask] = 1.0
+        deep_mask = world_depth < maxdepth
+        probability_matrix[deep_mask] = 1.0
 
-            # find world depths in taxon range,
-            # then broadcast results of depth_probability() to probability_matrix
-            depths_in_range = np.arange(mindepth, maxdepth - 1, -1)
-            world_depths_in_range = np.intersect1d(depths_in_range, world_depth)
-            f = functools.partial(self.depth_probability, taxon_mindepth=mindepth, taxon_maxdepth=maxdepth)
-            for depth in world_depths_in_range:
-                probability_matrix[world_depth == depth] = f(depth)
+        # find world depths in taxon range,
+        # then broadcast results of depth_probability() to probability_matrix
+        depths_in_range = np.arange(mindepth, maxdepth - 1, -1)
+        world_depths_in_range = np.intersect1d(depths_in_range, world_depth)
+        f = functools.partial(self.depth_probability, taxon_mindepth=mindepth, taxon_maxdepth=maxdepth)
+        for depth in world_depths_in_range:
+            probability_matrix[world_depth == depth] = f(depth)
 
         return probability_matrix
