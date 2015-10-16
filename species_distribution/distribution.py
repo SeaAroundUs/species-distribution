@@ -3,7 +3,7 @@ import logging
 import operator
 
 from .exceptions import InvalidTaxonException, NoPolygonException
-from .filters import polygon, fao, latitude, depth, habitat, submergence
+from . import filters
 from . import sd_io as io
 from . import settings
 from .models.world import Grid
@@ -31,30 +31,31 @@ def create_taxon_distribution(taxonkey):
     logger.info("working on taxon {}".format(taxonkey))
 
     _filters = (
-        {'name': 'polygon', 'f': polygon.Filter.filter},
-        {'name': 'fao', 'f': fao.Filter.filter},
-        {'name': 'latitude', 'f': latitude.Filter.filter},
-        {'name': 'depth', 'f': depth.Filter.filter},
-        {'name': 'habitat', 'f': habitat.Filter.filter},
-        {'name': 'submergence', 'f': submergence.Filter.filter},
+        filters.polygon,
+        filters.fao,
+        filters.latitude,
+        filters.depth,
+        filters.habitat,
+        filters.submergence
     )
 
     try:
-        matrices = (f['f'](taxon=taxonkey) for f in _filters)
-        matrices = list(filter(lambda x: x is not None, matrices))  # remove Nones
-
-        distribution_matrix = combine_probability_matrices(matrices)
-
-        water_percentage = Grid().get_grid('percent_water') / 100
-        distribution_matrix *= water_percentage
+        matrices = [f.filter(taxon=taxonkey) for f in _filters]
 
         if settings.DEBUG:
             for i, m in enumerate(matrices):
-                fname = '{}-{}-{}'.format(taxonkey, i, _filters[i]['name'])
+                fname = '{}-{}-{}'.format(taxonkey, i, _filters[i].name)
                 io.save_image(m, fname)
 
+
+        matrices = list(filter(lambda x: x is not None and x.count() > 0, matrices))  # remove Nones
+        distribution_matrix = combine_probability_matrices(matrices)
+
+        if settings.DEBUG:
             io.save_image(distribution_matrix, taxonkey)
-            logger.debug('grid cache usage: {}'.format(Grid().get_grid.cache_info()))
+
+        water_percentage = Grid().get_grid('percent_water') / 100
+        distribution_matrix *= water_percentage
 
         return distribution_matrix
 

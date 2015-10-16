@@ -10,7 +10,12 @@ from species_distribution.models.world import Grid
 from species_distribution.settings import NUMPY_WARNINGS
 
 
-class BaseFilter():
+class MetaBaseFilter(type):
+    @property
+    def name(cls):
+        return cls.__module__.split('.')[-1]
+
+class BaseFilter(metaclass=MetaBaseFilter):
     """ subclasses of Filter should define a _filter method
     which will be called by filter.  It should accept two keyword
     arguments:

@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 def save_image(array, name, enhance=False):
     """saves 2d array of values 0-1 to a grayscale PNG"""
 
+    if (array is None) or array.count() == 0:
+        return
+
     import matplotlib.pyplot as plt
     from PIL import Image, ImageOps
 
@@ -36,16 +39,18 @@ def save_image(array, name, enhance=False):
 def save_database(distribution, taxonkey):
 
     with engine.connect() as connection:
-        # psycopg2 isn't using executemany, it is doing one insert
-        # per record. Since the sqlalchemy connection object doesn't attempty to hide
-        # the raw connection, use it to insert the data with psycopg2.copy_from
+        # psycopg2 isn't using executemany, it does one insert
+        # per record. Since the sqlalchemy connection object to
+        # insert the data with psycopg2.copy_from
 
         raw_conn = connection.connection.connection
         cursor = raw_conn.cursor()
         cursor.execute("DELETE FROM taxon_distribution WHERE taxon_key = %s", (taxonkey, ))
 
         ravel = distribution.ravel()
-        indexes = np.where(~(np.isnan(ravel) | ravel.mask))[0]
+        # don't include values which are NaN, masked, or smaller than machine epsilon
+        # (approximately 0 valued)
+        indexes = np.where(~(np.isnan(ravel) | ravel.mask | (ravel <= np.finfo(float).eps).mask))[0]
 
         def records():
             for seq, value in zip(indexes + 1, ravel[indexes]):
