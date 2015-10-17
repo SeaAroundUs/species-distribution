@@ -219,9 +219,9 @@ class Filter(BaseFilter):
             if not weight > 0:
                 continue
 
-            if taxon.pelagic and hab['world_attr'] == 'seamount':
-                self.logger.debug('skipping seamount habitat for pelagic taxon {}'.format(taxon.taxon_key))
-                continue
+            # if taxon.pelagic and hab['world_attr'] == 'seamount':
+            #     self.logger.debug('skipping seamount habitat for pelagic taxon {}'.format(taxon.taxon_key))
+            #     continue
 
             self.logger.debug('habitat: {}'.format(hab['habitat_attr']))
 
