@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-from .models.db import engine, Session
+from .models.db import Session
 
 from .utils import IteratorFile
 from . import settings
@@ -18,6 +18,8 @@ def save_image(array, name, enhance=False):
     if (array is None) or array.count() == 0:
         return
 
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from PIL import Image, ImageOps
 
@@ -38,12 +40,12 @@ def save_image(array, name, enhance=False):
 
 def save_database(distribution, taxonkey):
 
-    with engine.connect() as connection:
+    with Session() as session:
         # psycopg2 isn't using executemany, it does one insert
-        # per record. Since the sqlalchemy connection object to
+        # per record. Use the sqlalchemy connection object to
         # insert the data with psycopg2.copy_from
 
-        raw_conn = connection.connection.connection
+        raw_conn = session.connection().connection
         cursor = raw_conn.cursor()
         cursor.execute("DELETE FROM taxon_distribution WHERE taxon_key = %s", (taxonkey, ))
 

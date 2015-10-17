@@ -1,12 +1,14 @@
 """ Taxa data source """
 
+import functools
+
 from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
 
 from .db import SpecDisModel, Session, Base
 from ..exceptions import NoPolygonException
 
-
+@functools.lru_cache(maxsize=None)
 def polygon_cells_for_taxon(taxon_key):
 
     query = """
