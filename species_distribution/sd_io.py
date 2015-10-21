@@ -1,3 +1,4 @@
+from datetime import datetime
 import functools
 import logging
 import os
@@ -60,6 +61,23 @@ def save_database(distribution, taxonkey):
 
         f = IteratorFile(records())
         cursor.copy_from(f, 'taxon_distribution', columns=('taxon_key', 'cell_id', 'relative_abundance'))
+
+        # update log. Postgres doesn't have UPSERT until 9.5
+        # This might not be totally thread safe, see
+        # master.lookup_* functions in integration-database
+        # for other solutions
+
+        cursor.execute("UPDATE taxon_distribution_log SET modified_timestamp=%s WHERE taxon_key=%s", (datetime.now(), taxonkey))
+        if cursor.rowcount == 0:
+            # UPDATE didn't find anything, so INSERT
+            logger.debug('inserting new row in taxon_distribution_log')
+            cursor.execute("""
+                INSERT INTO taxon_distribution_log (taxon_key, modified_timestamp)
+                VALUES (%s, %s)
+                """, (taxonkey, datetime.now()))
+        else:
+            logger.debug('updated taxon_distribution_log')
+
         raw_conn.commit()
 
 
