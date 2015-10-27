@@ -10,7 +10,7 @@ def get_hash():
 
 setup(
     name='species_distribution',
-    version='2.0.0-dev',
+    version='2.0.1',
     description='Species distribution for Sea Around Us Project',
     test_suite='unittest2.collector',
     packages=find_packages(),
