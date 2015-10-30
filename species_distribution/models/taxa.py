@@ -38,6 +38,7 @@ class Taxon(SpecDisModel):
         Base.metadata,
         Column('taxon_key', Integer(), primary_key=True),
         autoload=True,
+        schema='master'
     )
 
     def __str__(self):

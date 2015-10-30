@@ -14,8 +14,8 @@ from species_distribution import settings
 connection_str = 'postgresql://{username}:{password}@{host}:{port}/{db}'.format(**settings.DB)
 
 logger = logging.getLogger(__name__)
-if settings.DEBUG:
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+# if settings.DEBUG:
+#     logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 _engine = create_engine(connection_str, echo=False, poolclass=NullPool, isolation_level='READ UNCOMMITTED')
 Base = declarative_base()
