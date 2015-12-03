@@ -86,7 +86,7 @@ def completed_taxon():
     """returns a sequence of taxon_keys already present"""
     with Session() as session:
         query = """
-        SELECT DISTINCT taxon_key from taxon_distribution
+        SELECT DISTINCT taxon_key from taxon_distribution_log
         """
         result = session.execute(query)
         return [x[0] for x in result]
