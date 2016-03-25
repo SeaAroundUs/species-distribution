@@ -8,8 +8,9 @@ import sys
 import species_distribution.distribution as distribution
 from species_distribution import sd_io as io
 from species_distribution.models.db import Session
-from species_distribution.models.taxa import Taxon, TaxonExtent
+from species_distribution.models.taxa import Taxon, TaxonExtent, TaxonHabitat
 from species_distribution import settings
+from sqlalchemy import exists, and_
 
 STOP = False
 
@@ -46,13 +47,33 @@ def main(arguments):
         # get taxa
         if arguments.limit:
             taxa = session.query(Taxon) \
-                .join(TaxonExtent, Taxon.taxon_key == TaxonExtent.taxon_key)[0:arguments.limit]
+                .filter(Taxon.is_retired == False)\
+                .filter(exists().where(Taxon.taxon_key == TaxonExtent.taxon_key)) \
+                .filter(exists().where(
+                        and_(Taxon.taxon_key == TaxonHabitat.taxon_key, TaxonHabitat.found_in_fao_area_id.isnot(None))
+                    )
+                ) \
+                [0:arguments.limit]
+
         elif arguments.taxon:
-            taxa = session.query(Taxon).filter(Taxon.taxon_key.in_(arguments.taxon)).all()
-        else:
-            # only select taxa which have a polygon (distribution table, modelled "TaxaDistribution")
             taxa = session.query(Taxon) \
-                .join(TaxonExtent, Taxon.taxon_key == TaxonExtent.taxon_key) \
+                .filter(Taxon.taxon_key.in_(arguments.taxon))\
+                .filter(Taxon.is_retired == False)\
+                .filter(exists().where(Taxon.taxon_key == TaxonExtent.taxon_key)) \
+                .filter(exists().where(
+                        and_(Taxon.taxon_key == TaxonHabitat.taxon_key, TaxonHabitat.found_in_fao_area_id.isnot(None))
+                    )
+                ) \
+                .all()
+        else:
+            # only select taxa which have a polygon and habitat (distribution table, modelled "TaxaDistribution")
+            taxa = session.query(Taxon)\
+                .filter(Taxon.is_retired == False)\
+                .filter(exists().where(Taxon.taxon_key == TaxonExtent.taxon_key)) \
+                .filter(exists().where(
+                        and_(Taxon.taxon_key == TaxonHabitat.taxon_key, TaxonHabitat.found_in_fao_area_id.isnot(None))
+                    )
+                ) \
                 .order_by(Taxon.taxon_key) \
                 .all()
 
@@ -79,6 +100,8 @@ def main(arguments):
             if matrix is not None:
                 logger.info('saving {} to DB'.format(taxon_key))
                 io.save_database(matrix, taxon_key)
+            else:
+                logger.info("Calculated matrix for taxon {}q was nil!".format(taxon_key))
     else:
         # pool
         with Pool(processes=arguments.processes) as pool:
