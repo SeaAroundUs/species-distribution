@@ -14,24 +14,24 @@ from species_distribution import settings
 connection_str = 'postgresql://{username}:{password}@{host}:{port}/{db}'.format(**settings.DB)
 
 logger = logging.getLogger(__name__)
-# if settings.DEBUG:
-#     logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
-_engine = create_engine(connection_str, echo=False, poolclass=NullPool, isolation_level='READ UNCOMMITTED')
+def get_engine():
+
+    return create_engine(
+        connection_str,
+        echo=False,
+        poolclass=NullPool,
+        isolation_level='READ UNCOMMITTED'
+    )
+
 Base = declarative_base()
-Base.metadata.bind = _engine
-
+Base.metadata.bind = get_engine()
 
 @contextmanager
 def Session():
     """Provide a transactional scope around a series of operations."""
     try:
-        engine = create_engine(
-            connection_str,
-            echo=False,
-            poolclass=NullPool,
-            isolation_level='READ UNCOMMITTED',
-            )
+        engine = get_engine()
         session_maker = sessionmaker(bind=engine, autocommit=True) # autocommit=True, autoflush=False, expire_on_commit=False)
         session = session_maker()
         yield session
