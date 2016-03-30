@@ -38,17 +38,14 @@ class BaseFilter(metaclass=MetaBaseFilter):
         return self.probability_matrix.copy()
 
     @classmethod
-    def filter(cls, *args, **kwargs):
+    def filter(cls, session, *args, **kwargs):
         instance = cls()
         instance.logger.info('applying {}'.format(cls.__module__))
-        with Session() as session:
-            taxon = session.query(Taxon).get(kwargs['taxon'])
+        taxon = session.query(Taxon).get(kwargs['taxon'])
 
-            # pass in the session so the filter can
-            # query the DB if necessary
-            kwargs['session'] = session
-            kwargs['taxon'] = taxon
-            probability = instance._filter(*args, **kwargs)
+        kwargs['session'] = session
+        kwargs['taxon'] = taxon
+        probability = instance._filter(*args, **kwargs)
 
         # probability should either be  all masked or contain
         # only values 0->1:

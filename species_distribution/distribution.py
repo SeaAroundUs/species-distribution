@@ -2,6 +2,7 @@ import functools
 import logging
 import operator
 
+from .models.db import Session
 from .exceptions import InvalidTaxonException, NoPolygonException
 from . import filters
 from . import sd_io as io
@@ -20,11 +21,6 @@ def combine_probability_matrices(matrices):
     return distribution / distribution.sum()
 
 
-def threaded_create_taxon_distribution(taxon_key):
-    result = create_taxon_distribution(taxon_key)
-    return (taxon_key, result)
-
-
 def create_taxon_distribution(taxonkey):
     """returns a distribution matrix for given taxon taxon by applying filters"""
 
@@ -40,7 +36,8 @@ def create_taxon_distribution(taxonkey):
     )
 
     try:
-        matrices = [f.filter(taxon=taxonkey) for f in _filters]
+        with Session() as session:
+            matrices = [f.filter(session, taxon=taxonkey) for f in _filters]
 
         if settings.DEBUG:
             for i, m in enumerate(matrices):
@@ -57,12 +54,12 @@ def create_taxon_distribution(taxonkey):
         water_percentage = Grid().get_grid('percent_water') / 100
         distribution_matrix *= water_percentage
 
-        return distribution_matrix
+        return (taxonkey, distribution_matrix)
 
     except InvalidTaxonException as e:
-        logger.warn("Invalid taxon {}. Error: {}".format(taxonkey, str(e)))
+        logger.warning("Invalid taxon {}. Error: {}".format(taxonkey, str(e)))
     except NoPolygonException as e:
-        logger.warn("No polygon exists for taxon {}".format(taxonkey))
+        logger.warning("No polygon exists for taxon {}".format(taxonkey))
 
 
 def create_and_save_taxon(taxonkey, force=False):

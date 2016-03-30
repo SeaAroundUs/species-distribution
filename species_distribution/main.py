@@ -96,7 +96,7 @@ def main(arguments):
                 break
 
             logger.info("starting work on taxon key {} [{}/{}]".format(taxon_key, i + 1, len(taxa)))
-            matrix = distribution.create_taxon_distribution(taxon_key)
+            _, matrix = distribution.create_taxon_distribution(taxon_key)
             if matrix is not None:
                 logger.info('saving {} to DB'.format(taxon_key))
                 io.save_database(matrix, taxon_key)
@@ -112,7 +112,7 @@ def main(arguments):
                     logger.critical("Quitting early due to SIGINT")
                     break
 
-                function = distribution.threaded_create_taxon_distribution
+                function = distribution.create_taxon_distribution
                 args = (taxonkey,)
                 res.append(pool.apply_async(function, args))
 
