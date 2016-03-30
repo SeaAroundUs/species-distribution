@@ -1,7 +1,6 @@
-import numpy as np
-
 from species_distribution.filters.filter import BaseFilter
-from species_distribution.models.taxa import TaxonHabitat
+from species_distribution.models.taxa import fao_cells_for_taxon
+from species_distribution.models.world import Grid
 
 
 class Filter(BaseFilter):
@@ -10,15 +9,8 @@ class Filter(BaseFilter):
 
         probability_matrix = self.get_probability_matrix()
 
-        fao_grid = self.grid.get_grid('fao_area_id')
-
-        mask = np.zeros(fao_grid.shape, dtype=np.bool)
-
-        taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
-        # flip on bits for cells with an ID in faos
-        for fao in taxon_habitat.faos:
-            mask |= fao_grid == fao
-
-        probability_matrix[mask] = 1.0
+        cells = fao_cells_for_taxon(taxon.taxon_key)
+        indexes = list(zip(*cells))
+        probability_matrix[indexes[0], indexes[1]] = indexes[2]
 
         return probability_matrix

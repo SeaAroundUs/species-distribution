@@ -9,6 +9,7 @@ from sqlalchemy.schema import Table
 from .db import SpecDisModel, Session, Base
 from ..exceptions import NoPolygonException
 
+
 @functools.lru_cache(maxsize=None)
 def polygon_cells_for_taxon(taxon_key):
 
@@ -29,6 +30,43 @@ def polygon_cells_for_taxon(taxon_key):
         data = result.fetchall()
         if len(data) == 0:
             raise NoPolygonException
+        return data
+
+def fao_cells_for_taxon(taxon_key):
+
+    query = """
+    SELECT
+        x.row,
+        x.col,
+
+        -- clamp to range 0-1
+        CASE WHEN SUM(x.rnd) > 1
+            THEN 1.0
+        ELSE
+            SUM(x.rnd)
+        END
+
+    FROM
+    (
+        SELECT
+            MAX(c.cell_row) - 1 as row,
+            MAX(c.cell_col) - 1 as col,
+            (MAX(g.water_area) / MAX(c.water_area)) as rnd
+        FROM geo.simple_area_cell_assignment_raw g
+        JOIN cell c on (g.cell_id = c.cell_id)
+        JOIN taxon_habitat t ON (1=1)
+        WHERE
+            g.fao_area_id = ANY (t.found_in_fao_area_id)
+            AND t.taxon_key = :taxon_key
+        GROUP by g.fao_area_id, g.cell_id
+    ) x
+    GROUP BY x.row, x.col
+    ORDER BY x.row, x.col
+    """
+
+    with Session() as session:
+        result = session.execute(query, {'taxon_key': taxon_key})
+        data = result.fetchall()
         return data
 
 
