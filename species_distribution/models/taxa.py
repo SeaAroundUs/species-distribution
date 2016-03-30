@@ -54,7 +54,7 @@ def fao_cells_for_taxon(taxon_key):
             (MAX(g.water_area) / MAX(c.water_area)) as rnd
         FROM taxon_habitat t
         JOIN geo.simple_area_cell_assignment_raw g
-          ON (g.fao_area_id = ANY (t.found_in_fao_area_id) AND g.marine_layer_id IN (1, 2))
+          ON (g.fao_area_id = ANY (t.found_in_fao_area_id) AND g.marine_layer_id IN (2, 12))
         JOIN cell c on (g.cell_id = c.cell_id)
         WHERE t.taxon_key = :taxon_key
         GROUP by g.fao_area_id, g.cell_id
