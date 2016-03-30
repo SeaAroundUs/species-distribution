@@ -11,6 +11,8 @@ class Filter(BaseFilter):
 
         cells = fao_cells_for_taxon(taxon.taxon_key)
         indexes = list(zip(*cells))
-        probability_matrix[indexes[0], indexes[1]] = indexes[2]
+
+        if indexes:
+            probability_matrix[indexes[0], indexes[1]] = indexes[2]
 
         return probability_matrix
