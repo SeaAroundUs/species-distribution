@@ -6,7 +6,6 @@ import os
 import numpy as np
 
 from .models.db import Session
-
 from .utils import IteratorFile
 from . import settings
 
