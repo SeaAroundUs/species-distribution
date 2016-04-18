@@ -26,6 +26,10 @@ class Filter(BaseFilter):
             self.logger.debug('skipping depth filter for {} since Offshore==0'.format(taxon.taxon_key))
             return
 
+        if taxon_habitat.max_depth == 9999:
+            self.logger.debug('skipping depth filter for {} since max_depth==9999'.format(taxon.taxon_key))
+            return
+
         if taxon.pelagic:
             self.logger.debug('skipping depth filter for pelagic taxon {}'.format(taxon.taxon_key))
             return
