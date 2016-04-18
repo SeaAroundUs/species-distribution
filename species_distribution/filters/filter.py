@@ -40,8 +40,8 @@ class BaseFilter(metaclass=MetaBaseFilter):
     @classmethod
     def filter(cls, session, *args, **kwargs):
         instance = cls()
-        instance.logger.info('applying {}'.format(cls.__module__))
         taxon = session.query(Taxon).get(kwargs['taxon'])
+        instance.logger.info('applying {} filter to taxon {}'.format(cls.__module__, taxon.taxon_key))
 
         kwargs['session'] = session
         kwargs['taxon'] = taxon

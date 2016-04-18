@@ -9,10 +9,7 @@ user_settings_file = os.path.join(user_settings_dir, '.settings.json')
 settings = {
 
     'DEBUG': False,
-
     'NUMPY_WARNINGS': 'warn',
-
-    'DISTRIBUTION_FILE': 'species-distribution.hdf5',
     'PNG_DIR': 'png',
 
     'DB': {

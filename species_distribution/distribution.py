@@ -44,7 +44,6 @@ def create_taxon_distribution(taxonkey):
                 fname = '{}-{}-{}'.format(taxonkey, i, _filters[i].name)
                 io.save_image(m, fname)
 
-
         matrices = list(filter(lambda x: x is not None and x.count() > 0, matrices))  # remove Nones
         distribution_matrix = combine_probability_matrices(matrices)
 
@@ -60,15 +59,3 @@ def create_taxon_distribution(taxonkey):
         logger.warning("Invalid taxon {}. Error: {}".format(taxonkey, str(e)))
     except NoPolygonException as e:
         logger.warning("No polygon exists for taxon {}".format(taxonkey))
-
-
-def create_and_save_taxon(taxonkey, force=False):
-
-    distribution = create_taxon_distribution(taxonkey)
-    if distribution is not None:
-        io.save_database(distribution, taxonkey)
-        if settings.DEBUG:
-            io.save_hdf5(distribution, taxonkey, force=force)
-        logger.info('taxon {} complete'.format(taxonkey))
-    else:
-        logger.critical('nothing done for taxon {}'.format(taxonkey))

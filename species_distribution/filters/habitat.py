@@ -223,7 +223,7 @@ class Filter(BaseFilter):
             #     self.logger.debug('skipping seamount habitat for pelagic taxon {}'.format(taxon.taxon_key))
             #     continue
 
-            self.logger.debug('habitat: {}'.format(hab['habitat_attr']))
+            self.logger.debug('habitat: {} taxon: {}'.format(hab['habitat_attr'], taxon.taxon_key))
 
             habitat_grid = grid.get_grid(hab['world_attr'])
             if hab['world_attr'] in ('area_offshore', 'area_coast', 'estuary', 'shelf', 'slope', 'abyssal'):
