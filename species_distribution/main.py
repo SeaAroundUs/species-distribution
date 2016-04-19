@@ -97,6 +97,9 @@ def main(arguments):
 
         taxonkeys = [t.taxon_key for t in taxa]
 
+        if arguments.processes > len(taxa):
+            arguments.processes = len(taxa)
+
     if arguments.processes == 1:
         # no pool
         for i, taxon_key in enumerate(taxonkeys):
