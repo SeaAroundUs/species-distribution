@@ -22,9 +22,9 @@ class Filter(BaseFilter):
         taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
         probability_matrix = self.get_probability_matrix()
 
-        if taxon_habitat.max_depth == 9999:
-            self.logger.debug('skipping depth filter for {} since max_depth==9999'.format(taxon.taxon_key))
-            return
+        #if taxon_habitat.max_depth == 9999:
+        #    self.logger.debug('skipping depth filter for {} since max_depth==9999'.format(taxon.taxon_key))
+        #    return
 
         if taxon_habitat.offshore == 0:
             self.logger.debug('skipping depth filter for {} since Offshore==0'.format(taxon.taxon_key))
