@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument('-t', '--taxon', type=int, action='append', help='process this taxon only, can specify multiple -t options')
     parser.add_argument('-l', '--limit', type=int, help='process this many taxa only')
     parser.add_argument('-p', '--processes', type=int, default=1, help='use N processes')
+    parser.add_argument('-e', '--numpy_exception', action='store_true', help='numpy should throws exception instead of loggin warnings')
     parser.add_argument('-v', '--verbose', action='store_true', help='be verbose')
     return parser.parse_args()
 

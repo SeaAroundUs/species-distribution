@@ -11,6 +11,7 @@ from species_distribution.models.db import Session
 from species_distribution.models.taxa import Taxon, TaxonExtent, TaxonHabitat
 from species_distribution import settings
 from sqlalchemy import exists, and_
+import numpy as np
 
 STOP = False
 
@@ -99,6 +100,9 @@ def main(arguments):
 
         if arguments.processes > len(taxa):
             arguments.processes = len(taxa)
+
+    if arguments.numpy_exception:
+        np.seterr(all='raise')
 
     if arguments.processes == 1:
         # no pool
