@@ -59,3 +59,19 @@ def create_taxon_distribution(taxonkey):
         logger.warning("Invalid taxon {}. Error: {}".format(taxonkey, str(e)))
     except NoPolygonException as e:
         logger.warning("No polygon exists for taxon {}".format(taxonkey))
+
+
+def save_database(taxon_key, matrix):
+
+    if matrix is None or matrix.mask.all():
+        logger.info("Calculated matrix for taxon {} was None or masked, not saving to DB".format(taxon_key))
+    else:
+        logger.info('saving {} to DB'.format(taxon_key))
+        io.save_database(matrix, taxon_key)
+
+
+def create_and_save_distribution(taxonkey, force=False):
+    """convenient hook for recon code to make a single call to create and save distribution"""
+
+    _, distribution = create_taxon_distribution(taxonkey)
+    save_database(taxonkey, distribution)

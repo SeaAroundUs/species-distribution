@@ -36,15 +36,6 @@ def signal_handler(*args):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-def save_database(taxon_key, matrix):
-
-    if matrix is None or matrix.mask.all():
-        logger.info("Calculated matrix for taxon {} was None or masked, not saving to DB".format(taxon_key))
-    else:
-        logger.info('saving {} to DB'.format(taxon_key))
-        io.save_database(matrix, taxon_key)
-
-
 def main(arguments):
     configure_logging(arguments.verbose and logging.DEBUG or logging.INFO)
     logger.info("starting distribution")
@@ -113,7 +104,7 @@ def main(arguments):
 
             logger.info("starting work on taxon key {} [{}/{}]".format(taxon_key, i + 1, len(taxa)))
             _, matrix = distribution.create_taxon_distribution(taxon_key)
-            save_database(taxon_key, matrix)
+            distribution.save_database(taxon_key, matrix)
 
     else:
         # pool
@@ -131,7 +122,7 @@ def main(arguments):
 
             for r in res:
                 taxon_key, matrix = r.get()
-                save_database(taxon_key, matrix)
+                distribution.save_database(taxon_key, matrix)
 
 
     logger.info('distribution complete')
