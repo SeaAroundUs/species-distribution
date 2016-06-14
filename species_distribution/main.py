@@ -44,6 +44,8 @@ def main(arguments):
             settings.DB['db'],
             settings.DB['username'])
     )
+
+    taxonkeys = []
     with Session() as session:
         # get taxa
         if arguments.limit:
@@ -89,8 +91,14 @@ def main(arguments):
 
         taxonkeys = [t.taxon_key for t in taxa]
 
-        if arguments.processes > len(taxa):
-            arguments.processes = len(taxa)
+    num_of_taxons_to_process = len(taxonkeys)
+
+    if num_of_taxons_to_process == 0:
+        logger.info("No taxons selected for processing, process aborted.")
+        return
+
+    if arguments.processes > num_of_taxons_to_process:
+        arguments.processes = num_of_taxons_to_process
 
     if arguments.numpy_exception:
         np.seterr(all='raise')
