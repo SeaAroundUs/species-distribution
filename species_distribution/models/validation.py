@@ -1,23 +1,9 @@
 """ World data source """
 
-import functools
-
-import logging
-from multiprocessing import Pool
-import signal
-import sys
-import species_distribution.distribution as distribution
-from species_distribution import sd_io as io
-from species_distribution.models.taxa import Taxon, TaxonExtent, TaxonHabitat
-from species_distribution import settings
-from sqlalchemy import exists, and_
-import numpy as np
 from sqlalchemy import Column, Integer
 from sqlalchemy.schema import Table
-from sqlalchemy import exists, and_
-from .db import SpecDisModel, Base
-
-
+from sqlalchemy import and_
+from .db import SpecDisModel, Base, Session
 
 
 class ValidationRule(SpecDisModel):
@@ -30,7 +16,6 @@ class ValidationRule(SpecDisModel):
     )
 
 
-
 class ValidationResult(SpecDisModel):
     __table__ = Table(
         'validation_result',
@@ -40,5 +25,24 @@ class ValidationResult(SpecDisModel):
     )
 
 
+def refresh_validation_rules():
+    with Session() as session:
+        rules = session.query(ValidationRule) \
+            .filter(and_(ValidationRule.rule_id >=400, ValidationRule.rule_id <= 499)) \
+            .all()
+
+        for rule in rules:
+            session.query("select * from recon.refresh_validation_result_partition(%s)" % rule.rule_id)
 
 
+def filter_taxa_against_validation_results(taxonkeys):
+    if taxonkeys and len(taxonkeys) > 0:
+        with Session() as session:
+            results = session.execute("select distinct rs.id from recon.validation_result rs where rule_id between 400 and 499")
+
+            for result in results:
+                errorTaxon = result.id
+                if errorTaxon in taxonkeys:
+                    taxonkeys.remove(errorTaxon)
+
+    return taxonkeys

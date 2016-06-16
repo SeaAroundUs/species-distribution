@@ -8,7 +8,8 @@ import sys
 import species_distribution.distribution as distribution
 from species_distribution import sd_io as io
 from species_distribution.models.db import Session
-from species_distribution.models.taxa import Taxon, TaxonExtent, TaxonHabitat, ValidationRule, ValidationResult
+from species_distribution.models.taxa import Taxon, TaxonExtent, TaxonHabitat
+from species_distribution.models.validation import refresh_validation_rules, filter_taxa_against_validation_results
 from species_distribution import settings
 from sqlalchemy import exists, and_
 import numpy as np
@@ -92,9 +93,10 @@ def main(arguments):
         taxonkeys = [t.taxon_key for t in taxa]
 
     logger.info("Running validations")
-    #refreshvalidation()
-    #taxonkeys = validationresult(taxonkeys)
+    refresh_validation_rules()
+    taxonkeys = filter_taxa_against_validation_results(taxonkeys)
     logger.info("Validations complete")
+
     num_of_taxons_to_process = len(taxonkeys)
 
     if num_of_taxons_to_process == 0:
@@ -138,3 +140,4 @@ def main(arguments):
 
 
     logger.info('distribution complete')
+
