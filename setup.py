@@ -8,6 +8,12 @@ def get_hash():
             .strip() \
             .decode('ascii')
 
+# NOTE:
+# For ubuntu, there are os-level packages that also need to be installed. These are the minimum found to be necessary
+# to support the list of python packages specified below:
+#       sudo apt-get install libpng-dev libjpeg8-dev libfreetype6-dev pkg-config python-matplotlib python3-matplotlib
+#
+
 setup(
     name='species_distribution',
     version='2.0.1',
