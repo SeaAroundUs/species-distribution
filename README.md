@@ -81,12 +81,19 @@ optional arguments:
                         process this many taxa only
   -p PROCESSES, --processes PROCESSES
                         use N processes in parallel, one per taxon
-
+  -e, --numpy_exception
+                        numpy should throws exception instead of loggin warnings
   -v, --verbose         be verbose
 
 </pre>
 
-With no arguments, this will create a distribution for every taxon with a record in the taxon_extent table. To create a distribution for a single taxon, use the -t option.  For example:
+With no arguments, this will create a distribution for every taxon with a record in the taxon_extent and corresponding
+taxon_habitat tables. As processing all taxa is an intensive operation, it's recommended that the -p parameter is used
+to spawn more than one parallel processes to speed things up:
+
+    $ bin/species-distribution -v -p 8
+
+To create a distribution for a single taxon, use the -t option.  For example:
 
     $ bin/species-distribution -v -t 690690
     2015-10-30 11:27:58,647 species_distribution.main INFO  starting distribution
