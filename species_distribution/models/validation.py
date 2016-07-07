@@ -16,15 +16,6 @@ class ValidationRule(SpecDisModel):
     )
 
 
-class ValidationResult(SpecDisModel):
-    __table__ = Table(
-        'validation_result',
-        Base.metadata,
-        autoload=True,
-        extend_existing=True
-    )
-
-
 def refresh_validation_rules():
     with Session() as session:
         rules = session.query(ValidationRule) \
