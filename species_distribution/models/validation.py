@@ -29,7 +29,7 @@ def refresh_validation_rules():
 def filter_taxa_against_validation_results(taxonkeys):
     if taxonkeys and len(taxonkeys) > 0:
         with Session() as session:
-            results = session.execute("select distinct rs.id from recon.validation_result rs where rule_id between 400 and 499")
+            results = session.execute("select distinct rs.id from recon.validation_result rs where rule_id between 400 and 499 and rule_id <> 412")
 
             for result in results:
                 errorTaxon = result.id
