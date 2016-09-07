@@ -2,8 +2,9 @@
 
 import json
 import os
+import sys
 
-user_settings_dir = os.path.dirname(__file__)
+user_settings_dir = os.getcwd()
 user_settings_file = os.path.join(user_settings_dir, '.settings.json')
 
 settings = {
@@ -26,7 +27,7 @@ settings = {
 
 locals().update(settings)
 
-# override with user settings in ~/.species-distribution/settings.json
+# override with user settings in ./species-distribution/.settings.json
 try:
 
     if not os.path.isdir(user_settings_dir):
