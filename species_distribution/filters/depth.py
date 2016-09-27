@@ -38,8 +38,12 @@ class Filter(BaseFilter):
         # world goes from surface at EleMax: 0 to EleMin: -N at depth
         # taxon goes from surface mindepth 0 to maxdepth: N at depth
 
-        mindepth = -taxon.min_depth
-        maxdepth = -taxon.max_depth
+        #mindepth = -taxon.min_depth
+        #maxdepth = -taxon.max_depth
+
+        # TODO: Check with Deng to make sure these figures from HI is also inverted like they currently are in master.taxon
+        mindepth = -taxon_habitat.min_depth
+        maxdepth = -taxon_habitat.max_depth
 
         world_depth = self.grid.get_grid('ele_avg')
 

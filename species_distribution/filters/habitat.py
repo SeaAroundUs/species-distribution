@@ -1,4 +1,6 @@
+
 import functools
+import gc
 
 import numpy as np
 
@@ -211,6 +213,8 @@ class Filter(BaseFilter):
         dist_independent_matrices = [self.get_probability_matrix()]  # seed it with an empty one in case no others exist
 
         taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
+
+        gc.collect()
 
         for hab in habitats:
 

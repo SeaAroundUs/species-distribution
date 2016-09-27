@@ -224,18 +224,19 @@ class Filter(BaseFilter):
     def _filter(self, taxon=None, session=None):
 
         taxon_habitat = session.query(TaxonHabitat).get(taxon.taxon_key)
-        min_depth = -taxon.min_depth
-        max_depth = -taxon.max_depth
+
+        min_depth = -taxon_habitat.min_depth
+        max_depth = -taxon_habitat.max_depth
 
         if taxon_habitat.intertidal:
             self.logger.debug('Skipping submergence filter for intertidal taxon {}'.format(taxon.taxon_key))
             return
 
         if ((max_depth == 9999)
-            or (abs(taxon.lat_north) == 90)
-            or (abs(taxon.lat_south) == 90)
-            or (taxon.lat_north >= 60 and taxon.lat_south >= 60)
-            or (taxon.lat_north <= -60 and taxon.lat_south <= -60)
+            or (abs(taxon_habitat.lat_north) == 90)
+            or (abs(taxon_habitat.lat_south) == 90)
+            or (taxon_habitat.lat_north >= 60 and taxon_habitat.lat_south >= 60)
+            or (taxon_habitat.lat_north <= -60 and taxon_habitat.lat_south <= -60)
         ):
             # short circuit, won't do submergence with unsupported data
             return
@@ -248,10 +249,10 @@ class Filter(BaseFilter):
         ocean_depth = self.grid.get_grid('ele_min')
         percent_water = self.grid.get_grid('percent_water')
 
-        p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon.lat_north, taxon.lat_south)
+        p_high, p_low = self.fit_parabolas(min_depth, max_depth, taxon_habitat.lat_north, taxon_habitat.lat_south)
 
         if settings.DEBUG:
-            self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon.lat_north, taxon.lat_south, taxon.taxon_key)
+            self._plot_parabolas(p_high, p_low, min_depth, max_depth, taxon_habitat.lat_north, taxon_habitat.lat_south, taxon_habitat.taxon_key)
 
         p_high_array = self._grid_parabola(p_high)
         p_low_array = self._grid_parabola(p_low)
