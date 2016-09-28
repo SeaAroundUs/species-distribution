@@ -7,6 +7,10 @@ import sys
 user_settings_dir = os.getcwd()
 user_settings_file = os.path.join(user_settings_dir, '.settings.json')
 
+if not os.path.isfile(user_settings_file):
+    user_settings_dir = os.path.dirname(__file__)
+    user_settings_file = os.path.join(user_settings_dir, '.settings.json')
+
 settings = {
 
     'DEBUG': False,
@@ -14,11 +18,11 @@ settings = {
     'PNG_DIR': 'png',
 
     'DB': {
-        'username': 'web',
-        'password': 'web',
+        'username': 'sau_int',
+        'password': 'sau_int',
         'host': 'localhost',
         'port': '5432',
-        'db': 'specdis'
+        'db': 'sau_int'
     },
 
     'USER_SETTINGS_DIR': user_settings_dir,
