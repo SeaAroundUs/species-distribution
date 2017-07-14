@@ -30,6 +30,7 @@ CREATE OR REPLACE VIEW distribution.v_world as
     w.seamount_saup,
     w.seamount,
     w.coral,
+    w.front,
     w.pprod,
     w.ice_con,
     w.sst,
