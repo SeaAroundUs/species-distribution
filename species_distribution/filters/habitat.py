@@ -197,6 +197,7 @@ class Filter(BaseFilter):
             {'habitat_attr': 'offshore', 'world_attr': 'area_offshore', 'dist_independant': False},
             {'habitat_attr': 'others', 'world_attr': 'percent_water', 'dist_independant': False},
             {'habitat_attr': 'coral', 'world_attr': 'coral', 'dist_independant': True},
+            {'habitat_attr': 'front', 'world_attr': 'front', 'dist_independant': False},
             {'habitat_attr': 'estuaries', 'world_attr': 'estuary', 'dist_independant': False},
             # {'habitat_attr': 'Seagrass', 'world_attr': 'Seagrass', 'dist_independant': True},
             {'habitat_attr': 'sea_mount', 'world_attr': 'seamount', 'dist_independant': False},
@@ -230,7 +231,7 @@ class Filter(BaseFilter):
             self.logger.debug('habitat: {} taxon: {}'.format(hab['habitat_attr'], taxon.taxon_key))
 
             habitat_grid = grid.get_grid(hab['world_attr'])
-            if hab['world_attr'] in ('area_offshore', 'area_coast', 'estuary', 'shelf', 'slope', 'abyssal'):
+            if hab['world_attr'] in ('area_offshore', 'area_coast', 'estuary', 'shelf', 'slope', 'abyssal', 'front'):
                 # Area is in km2, convert to percentage
                 total_area = grid.get_grid('total_area')
                 habitat_grid = habitat_grid / total_area
