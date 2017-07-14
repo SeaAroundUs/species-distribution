@@ -51,6 +51,7 @@ CREATE OR REPLACE VIEW v_world as
     w."SeamountSAUP",
     w."Seamount",
     w."Coral",
+    w."Front",
     w."PProd",
     w."IceCon",
     w."SST",
